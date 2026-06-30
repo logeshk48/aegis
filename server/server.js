@@ -1,11 +1,18 @@
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
 
 app.use(cors());            // let the frontend talk to this server
 app.use(express.json());    // let the server read JSON sent to it
+
+// connect to MongoDB
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch((err) => console.error('❌ MongoDB connection error:', err.message));
 
 // our first route — a simple health check
 app.get('/api/health', (req, res) => {
