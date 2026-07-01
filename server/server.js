@@ -3,6 +3,8 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
+const authRoutes = require('./routes/authRoutes');
+
 const app = express();
 
 app.use(cors());            // let the frontend talk to this server
@@ -14,7 +16,10 @@ mongoose
   .then(() => console.log('✅ Connected to MongoDB'))
   .catch((err) => console.error('❌ MongoDB connection error:', err.message));
 
-// our first route — a simple health check
+// routes
+app.use('/api/auth', authRoutes);   // all auth routes live under /api/auth
+
+// health check route
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Hello from your server! 🚀' });
 });
