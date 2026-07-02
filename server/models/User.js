@@ -35,5 +35,10 @@ userSchema.pre('save', async function () {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
+// METHOD: check if a typed password matches this user's stored hash
+userSchema.methods.matchPassword = async function (typedPassword) {
+  return await bcrypt.compare(typedPassword, this.password);
+};
+
 // create the model from the schema, and export it
 module.exports = mongoose.model('User', userSchema);
