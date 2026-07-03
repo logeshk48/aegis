@@ -60,26 +60,22 @@ const loginUser = async (req, res) => {
   try {
     let { email, password } = req.body;
 
-    // 1. make sure both fields are provided
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
     email = email.trim().toLowerCase();
 
-    // 2. find the user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // 3. check the password using the method we built
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // 4. success — create a token and send it back
     const token = generateToken(user._id);
 
     res.status(200).json({
@@ -96,4 +92,17 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser };
+// @desc   Get the logged-in user's profile
+// @route  GET /api/auth/profile  (protected)
+const getProfile = async (req, res) => {
+  // req.user was attached by the protect middleware
+  res.status(200).json({
+    user: {
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+    },
+  });
+};
+
+module.exports = { registerUser, loginUser, getProfile };
