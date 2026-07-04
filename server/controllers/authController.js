@@ -1,10 +1,17 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-// helper: create a signed JWT for a given user id
-const generateToken = (userId) => {
+// helper: short-lived access token (used on every request)
+const generateAccessToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: '7d', // token stays valid for 7 days
+    expiresIn: '15m', // 15 minutes
+  });
+};
+
+// helper: long-lived refresh token (only used to get new access tokens)
+const generateRefreshToken = (userId) => {
+  return jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: '7d', // 7 days
   });
 };
 
@@ -76,11 +83,13 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const token = generateToken(user._id);
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
     res.status(200).json({
       message: 'Logged in successfully',
-      token,
+      accessToken,
+      refreshToken, // temporary — in Commit 4 we'll move this into a secure cookie
       user: {
         id: user._id,
         name: user.name,
