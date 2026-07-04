@@ -1,14 +1,19 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
-app.use(cors());            // let the frontend talk to this server
-app.use(express.json());    // let the server read JSON sent to it
+app.use(cors({
+  origin: 'http://localhost:5173',   // our frontend's address
+  credentials: true,                 // allow cookies to be sent
+}));
+app.use(express.json());             // let the server read JSON sent to it
+app.use(cookieParser());             // let the server read cookies
 
 // connect to MongoDB
 mongoose

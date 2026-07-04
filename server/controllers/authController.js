@@ -86,10 +86,17 @@ const loginUser = async (req, res) => {
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
+    // store the refresh token in a secure, httpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,                                   // JS cannot read it (XSS protection)
+      secure: process.env.NODE_ENV === 'production',    // HTTPS only in production
+      sameSite: 'strict',                               // CSRF protection
+      maxAge: 7 * 24 * 60 * 60 * 1000,                  // 7 days in milliseconds
+    });
+
     res.status(200).json({
       message: 'Logged in successfully',
-      accessToken,
-      refreshToken, // temporary — in Commit 4 we'll move this into a secure cookie
+      accessToken, // only the short-lived token goes in the response now
       user: {
         id: user._id,
         name: user.name,
