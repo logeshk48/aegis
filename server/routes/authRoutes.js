@@ -4,6 +4,7 @@ const {
   registerUser,
   loginUser,
   getProfile,
+  refreshAccessToken,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -12,6 +13,9 @@ router.post('/register', registerUser);
 
 // POST /api/auth/login  →  runs the loginUser logic
 router.post('/login', loginUser);
+
+// POST /api/auth/refresh  →  issues a new access token from the cookie
+router.post('/refresh', refreshAccessToken);
 
 // GET /api/auth/profile  →  protected: only works with a valid token
 router.get('/profile', protect, getProfile);

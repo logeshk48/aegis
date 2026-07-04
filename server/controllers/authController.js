@@ -121,4 +121,33 @@ const getProfile = async (req, res) => {
   });
 };
 
-module.exports = { registerUser, loginUser, getProfile };
+// @desc   Get a new access token using the refresh token cookie
+// @route  POST /api/auth/refresh
+const refreshAccessToken = async (req, res) => {
+  try {
+    // 1. read the refresh token from the httpOnly cookie
+    const token = req.cookies.refreshToken;
+
+    if (!token) {
+      return res.status(401).json({ message: 'No refresh token provided' });
+    }
+
+    // 2. verify it using the refresh secret
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+
+    // 3. make sure the user still exists
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ message: 'User no longer exists' });
+    }
+
+    // 4. issue a fresh access token
+    const accessToken = generateAccessToken(user._id);
+
+    res.status(200).json({ accessToken });
+  } catch (error) {
+    return res.status(401).json({ message: 'Invalid or expired refresh token' });
+  }
+};
+
+module.exports = { registerUser, loginUser, getProfile, refreshAccessToken };
