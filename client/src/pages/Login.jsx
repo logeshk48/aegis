@@ -1,14 +1,40 @@
 import { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // for now just confirm the form works — we connect to backend next commit
-    setMessage(`Ready to log in: ${email}`);
+    setMessage('');
+    setLoading(true);
+
+    try {
+      const res = await axios.post(
+        'http://localhost:5000/api/auth/login',
+        { email, password },
+        { withCredentials: true } // needed so the refresh cookie is set
+      );
+
+      // store the access token so we can use it on future requests
+      localStorage.setItem('accessToken', res.data.accessToken);
+      localStorage.setItem('userName', res.data.user.name);
+
+      setMessage('✅ Logged in! Redirecting...');
+      setTimeout(() => navigate('/'), 1200);
+    } catch (err) {
+      const errorMsg =
+        err.response?.data?.message || 'Something went wrong. Try again.';
+      setMessage('❌ ' + errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,8 +64,8 @@ function Login() {
           />
         </div>
 
-        <button type="submit" style={{ padding: '0.5rem 1rem' }}>
-          Log In
+        <button type="submit" disabled={loading} style={{ padding: '0.5rem 1rem' }}>
+          {loading ? 'Logging in...' : 'Log In'}
         </button>
       </form>
 
