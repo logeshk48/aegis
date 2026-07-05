@@ -1,18 +1,40 @@
 import { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function Signup() {
-  // state to hold the form inputs
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // runs when the form is submitted
-  const handleSubmit = (e) => {
-    e.preventDefault(); // stop the browser from reloading the page
+  const navigate = useNavigate();
 
-    // for now, just show what was typed (we connect to backend next commit)
-    setMessage(`Ready to register: ${name} (${email})`);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage('');
+    setLoading(true);
+
+    try {
+      const res = await axios.post(
+        'http://localhost:5000/api/auth/register',
+        { name, email, password }
+      );
+
+      // success!
+      setMessage('✅ Account created! Redirecting to login...');
+
+      // after a short pause, send them to the login page
+      setTimeout(() => navigate('/login'), 1500);
+    } catch (err) {
+      // show the error message from the backend, if there is one
+      const errorMsg =
+        err.response?.data?.message || 'Something went wrong. Try again.';
+      setMessage('❌ ' + errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,8 +75,8 @@ function Signup() {
           />
         </div>
 
-        <button type="submit" style={{ padding: '0.5rem 1rem' }}>
-          Sign Up
+        <button type="submit" disabled={loading} style={{ padding: '0.5rem 1rem' }}>
+          {loading ? 'Creating...' : 'Sign Up'}
         </button>
       </form>
 
