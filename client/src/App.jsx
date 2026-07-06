@@ -2,13 +2,12 @@ import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-do
 import Home from './pages/Home';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
+import ProtectedRoute from './components/ProtectedRoute';
 import { logout } from './utils/auth';
 
-// the navigation bar — knows whether you're logged in
 function NavBar() {
   const navigate = useNavigate();
 
-  // check login state by looking for a stored token
   const isLoggedIn = !!localStorage.getItem('accessToken');
   const userName = localStorage.getItem('userName');
 
@@ -43,7 +42,14 @@ function App() {
     <BrowserRouter>
       <NavBar />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
       </Routes>
