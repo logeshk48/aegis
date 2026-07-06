@@ -150,4 +150,15 @@ const refreshAccessToken = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getProfile, refreshAccessToken };
+// @desc   Log out — clear the refresh token cookie
+// @route  POST /api/auth/logout
+const logoutUser = async (req, res) => {
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+  res.status(200).json({ message: 'Logged out successfully' });
+};
+
+module.exports = { registerUser, loginUser, getProfile, refreshAccessToken, logoutUser };
