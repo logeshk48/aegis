@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 
 const app = express();
 
@@ -22,7 +23,8 @@ mongoose
   .catch((err) => console.error('❌ MongoDB connection error:', err.message));
 
 // routes
-app.use('/api/auth', authRoutes);   // all auth routes live under /api/auth
+app.use('/api/auth', authRoutes);    // all auth routes live under /api/auth
+app.use('/api/tasks', taskRoutes);   // all task routes live under /api/tasks
 
 // health check route
 app.get('/api/health', (req, res) => {
