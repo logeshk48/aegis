@@ -27,4 +27,18 @@ const createTask = async (req, res) => {
   }
 };
 
-module.exports = { createTask };
+// @desc   Get all tasks for the logged-in user
+// @route  GET /api/tasks
+// @access Protected
+const getTasks = async (req, res) => {
+  try {
+    // only fetch tasks owned by this user, newest first
+    const tasks = await Task.find({ user: req.user._id }).sort({ createdAt: -1 });
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong', error: error.message });
+  }
+};
+
+module.exports = { createTask, getTasks };
