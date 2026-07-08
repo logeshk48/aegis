@@ -76,4 +76,30 @@ const updateTask = async (req, res) => {
   }
 };
 
-module.exports = { createTask, getTasks, updateTask };
+// @desc   Delete a task
+// @route  DELETE /api/tasks/:id
+// @access Protected
+const deleteTask = async (req, res) => {
+  try {
+    // 1. find the task
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // 2. make sure it belongs to the logged-in user
+    if (task.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this task' });
+    }
+
+    // 3. delete it
+    await task.deleteOne();
+
+    res.status(200).json({ message: 'Task deleted', id: req.params.id });
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong', error: error.message });
+  }
+};
+
+module.exports = { createTask, getTasks, updateTask, deleteTask };
