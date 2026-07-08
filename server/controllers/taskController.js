@@ -41,4 +41,39 @@ const getTasks = async (req, res) => {
   }
 };
 
-module.exports = { createTask, getTasks };
+// @desc   Update a task
+// @route  PUT /api/tasks/:id
+// @access Protected
+const updateTask = async (req, res) => {
+  try {
+    // 1. find the task by its id
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // 2. make sure this task belongs to the logged-in user
+    if (task.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to edit this task' });
+    }
+
+    // 3. update only the fields that were provided
+    const { title, description, priority, dueDate, completed } = req.body;
+
+    if (title !== undefined) task.title = title.trim();
+    if (description !== undefined) task.description = description;
+    if (priority !== undefined) task.priority = priority;
+    if (dueDate !== undefined) task.dueDate = dueDate;
+    if (completed !== undefined) task.completed = completed;
+
+    // 4. save the changes
+    const updatedTask = await task.save();
+
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong', error: error.message });
+  }
+};
+
+module.exports = { createTask, getTasks, updateTask };
