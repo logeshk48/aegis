@@ -102,4 +102,30 @@ const deleteTask = async (req, res) => {
   }
 };
 
-module.exports = { createTask, getTasks, updateTask, deleteTask };
+// @desc   Toggle a task's completed status (done ↔ not done)
+// @route  PATCH /api/tasks/:id/toggle
+// @access Protected
+const toggleTask = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // ownership check
+    if (task.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to modify this task' });
+    }
+
+    // flip it
+    task.completed = !task.completed;
+    const updatedTask = await task.save();
+
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong', error: error.message });
+  }
+};
+
+module.exports = { createTask, getTasks, updateTask, deleteTask, toggleTask };
