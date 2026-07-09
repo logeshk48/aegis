@@ -40,7 +40,7 @@ function Tasks() {
 
   return (
     <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: '600px' }}>
-      <h1>My Tasks</h1>
+      <h1>My Tasks {!loading && `(${tasks.length})`}</h1>
 
       <form onSubmit={handleAddTask} style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem' }}>
         <input
