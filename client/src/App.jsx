@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-do
 import Home from './pages/Home';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
+import Tasks from './pages/Tasks';
 import ProtectedRoute from './components/ProtectedRoute';
 import { logout } from './utils/auth';
 
@@ -22,6 +23,7 @@ function NavBar() {
 
       {isLoggedIn ? (
         <>
+          <Link to="/tasks" style={{ marginRight: '1rem' }}>Tasks</Link>
           <span style={{ marginRight: '1rem' }}>Hi, {userName} 👋</span>
           <button onClick={handleLogout} style={{ padding: '0.3rem 0.8rem' }}>
             Logout
@@ -47,6 +49,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tasks"
+          element={
+            <ProtectedRoute>
+              <Tasks />
             </ProtectedRoute>
           }
         />
