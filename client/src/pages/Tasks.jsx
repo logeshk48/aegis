@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
+import TaskItem from '../components/TaskItem';
 
 function Tasks() {
   const [tasks, setTasks] = useState([]);
@@ -42,7 +43,6 @@ function Tasks() {
   const handleToggle = async (id) => {
     try {
       const res = await api.patch(`/tasks/${id}/toggle`);
-      // replace the old task with the updated one from the server
       setTasks(tasks.map((task) => (task._id === id ? res.data : task)));
     } catch (err) {
       setError('Could not update task.');
@@ -54,7 +54,6 @@ function Tasks() {
   const handleDelete = async (id) => {
     try {
       await api.delete(`/tasks/${id}`);
-      // remove the deleted task from the list
       setTasks(tasks.filter((task) => task._id !== id));
     } catch (err) {
       setError('Could not delete task.');
@@ -95,51 +94,12 @@ function Tasks() {
       ) : (
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {tasks.map((task) => (
-            <li
+            <TaskItem
               key={task._id}
-              style={{
-                border: '1px solid #ddd',
-                borderRadius: '6px',
-                padding: '0.75rem 1rem',
-                marginBottom: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                background: task.completed ? '#f5f5f5' : 'white',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => handleToggle(task._id)}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-              />
-              <strong
-                style={{
-                  textDecoration: task.completed ? 'line-through' : 'none',
-                  color: task.completed ? '#999' : '#000',
-                }}
-              >
-                {task.title}
-              </strong>
-              <span style={{ marginLeft: 'auto', color: '#888', fontSize: '0.85rem' }}>
-                [{task.priority}]
-              </span>
-              <button
-                onClick={() => handleDelete(task._id)}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  color: '#c00',
-                  cursor: 'pointer',
-                  fontSize: '1.1rem',
-                  padding: '0 0.25rem',
-                }}
-                title="Delete task"
-              >
-                ✕
-              </button>
-            </li>
+              task={task}
+              onToggle={handleToggle}
+              onDelete={handleDelete}
+            />
           ))}
         </ul>
       )}
