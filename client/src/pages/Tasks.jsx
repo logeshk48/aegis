@@ -4,7 +4,7 @@ import api from '../api/axios';
 function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);       // NEW: loading state
+  const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState('');
   const [priority, setPriority] = useState('medium');
 
@@ -17,7 +17,7 @@ function Tasks() {
         setError('Could not load tasks.');
         console.error(err);
       } finally {
-        setLoading(false);      // NEW: done loading, success or fail
+        setLoading(false);
       }
     };
     fetchTasks();
@@ -34,6 +34,18 @@ function Tasks() {
       setPriority('medium');
     } catch (err) {
       setError('Could not add task.');
+      console.error(err);
+    }
+  };
+
+  // toggle a task's completed status
+  const handleToggle = async (id) => {
+    try {
+      const res = await api.patch(`/tasks/${id}/toggle`);
+      // replace the old task with the updated one from the server
+      setTasks(tasks.map((task) => (task._id === id ? res.data : task)));
+    } catch (err) {
+      setError('Could not update task.');
       console.error(err);
     }
   };
@@ -64,7 +76,6 @@ function Tasks() {
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* three states: loading, empty, or the list */}
       {loading ? (
         <p style={{ color: '#888' }}>Loading your tasks...</p>
       ) : tasks.length === 0 ? (
@@ -79,10 +90,19 @@ function Tasks() {
                 borderRadius: '6px',
                 padding: '0.75rem 1rem',
                 marginBottom: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
               }}
             >
+              <input
+                type="checkbox"
+                checked={task.completed}
+                onChange={() => handleToggle(task._id)}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
               <strong>{task.title}</strong>
-              <span style={{ marginLeft: '0.5rem', color: '#888', fontSize: '0.85rem' }}>
+              <span style={{ marginLeft: 'auto', color: '#888', fontSize: '0.85rem' }}>
                 [{task.priority}]
               </span>
             </li>
