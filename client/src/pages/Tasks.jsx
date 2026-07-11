@@ -50,8 +50,12 @@ function Tasks() {
     }
   };
 
-  // delete a task
+  // delete a task (with confirmation)
   const handleDelete = async (id) => {
+    // ask the user to confirm first
+    const confirmed = window.confirm('Delete this task? This cannot be undone.');
+    if (!confirmed) return; // they clicked Cancel — do nothing
+
     try {
       await api.delete(`/tasks/${id}`);
       setTasks(tasks.filter((task) => task._id !== id));
