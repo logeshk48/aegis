@@ -93,6 +93,7 @@ function Tasks() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
+                background: task.completed ? '#f5f5f5' : 'white',
               }}
             >
               <input
@@ -101,7 +102,14 @@ function Tasks() {
                 onChange={() => handleToggle(task._id)}
                 style={{ width: '18px', height: '18px', cursor: 'pointer' }}
               />
-              <strong>{task.title}</strong>
+              <strong
+                style={{
+                  textDecoration: task.completed ? 'line-through' : 'none',
+                  color: task.completed ? '#999' : '#000',
+                }}
+              >
+                {task.title}
+              </strong>
               <span style={{ marginLeft: 'auto', color: '#888', fontSize: '0.85rem' }}>
                 [{task.priority}]
               </span>
