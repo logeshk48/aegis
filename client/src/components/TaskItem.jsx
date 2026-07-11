@@ -1,3 +1,10 @@
+// map each priority to a color
+const priorityColors = {
+  low: '#22c55e',      // green
+  medium: '#eab308',   // yellow
+  high: '#ef4444',     // red
+};
+
 function TaskItem({ task, onToggle, onDelete }) {
   return (
     <li
@@ -26,9 +33,29 @@ function TaskItem({ task, onToggle, onDelete }) {
       >
         {task.title}
       </strong>
-      <span style={{ marginLeft: 'auto', color: '#888', fontSize: '0.85rem' }}>
-        [{task.priority}]
+
+      <span
+        style={{
+          marginLeft: 'auto',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.35rem',
+          color: '#888',
+          fontSize: '0.8rem',
+        }}
+      >
+        <span
+          style={{
+            width: '10px',
+            height: '10px',
+            borderRadius: '50%',
+            background: priorityColors[task.priority] || '#999',
+            display: 'inline-block',
+          }}
+        />
+        {task.priority}
       </span>
+
       <button
         onClick={() => onDelete(task._id)}
         style={{
