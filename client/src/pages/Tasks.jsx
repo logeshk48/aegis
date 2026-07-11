@@ -50,6 +50,18 @@ function Tasks() {
     }
   };
 
+  // delete a task
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/tasks/${id}`);
+      // remove the deleted task from the list
+      setTasks(tasks.filter((task) => task._id !== id));
+    } catch (err) {
+      setError('Could not delete task.');
+      console.error(err);
+    }
+  };
+
   return (
     <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: '600px' }}>
       <h1>My Tasks {!loading && `(${tasks.length})`}</h1>
@@ -113,6 +125,20 @@ function Tasks() {
               <span style={{ marginLeft: 'auto', color: '#888', fontSize: '0.85rem' }}>
                 [{task.priority}]
               </span>
+              <button
+                onClick={() => handleDelete(task._id)}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#c00',
+                  cursor: 'pointer',
+                  fontSize: '1.1rem',
+                  padding: '0 0.25rem',
+                }}
+                title="Delete task"
+              >
+                ✕
+              </button>
             </li>
           ))}
         </ul>
