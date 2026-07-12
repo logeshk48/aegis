@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 import Tasks from './pages/Tasks';
+import Habits from './pages/Habits';
 import ProtectedRoute from './components/ProtectedRoute';
 import { logout } from './utils/auth';
 
@@ -24,6 +25,7 @@ function NavBar() {
       {isLoggedIn ? (
         <>
           <Link to="/tasks" style={{ marginRight: '1rem' }}>Tasks</Link>
+          <Link to="/habits" style={{ marginRight: '1rem' }}>Habits</Link>
           <span style={{ marginRight: '1rem' }}>Hi, {userName} 👋</span>
           <button onClick={handleLogout} style={{ padding: '0.3rem 0.8rem' }}>
             Logout
@@ -57,6 +59,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Tasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/habits"
+          element={
+            <ProtectedRoute>
+              <Habits />
             </ProtectedRoute>
           }
         />
