@@ -6,15 +6,16 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const habitRoutes = require('./routes/habitRoutes');
 
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:5173',   // our frontend's address
-  credentials: true,                 // allow cookies to be sent
+  origin: 'http://localhost:5173',
+  credentials: true,
 }));
-app.use(express.json());             // let the server read JSON sent to it
-app.use(cookieParser());             // let the server read cookies
+app.use(express.json());
+app.use(cookieParser());
 
 // connect to MongoDB
 mongoose
@@ -23,8 +24,9 @@ mongoose
   .catch((err) => console.error('❌ MongoDB connection error:', err.message));
 
 // routes
-app.use('/api/auth', authRoutes);    // all auth routes live under /api/auth
-app.use('/api/tasks', taskRoutes);   // all task routes live under /api/tasks
+app.use('/api/auth', authRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/habits', habitRoutes);   // ← habit routes live under /api/habits
 
 // health check route
 app.get('/api/health', (req, res) => {
