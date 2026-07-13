@@ -7,7 +7,6 @@ function Habits() {
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
 
-  // fetch habits when the page loads
   useEffect(() => {
     const fetchHabits = async () => {
       try {
@@ -23,7 +22,6 @@ function Habits() {
     fetchHabits();
   }, []);
 
-  // add a new habit
   const handleAddHabit = async (e) => {
     e.preventDefault();
     if (!newName.trim()) return;
@@ -36,6 +34,26 @@ function Habits() {
       setError('Could not add habit.');
       console.error(err);
     }
+  };
+
+  // mark a habit done for today
+  const handleCheckIn = async (id) => {
+    try {
+      const res = await api.patch(`/habits/${id}/checkin`);
+      // replace the habit with the updated one (new streak)
+      setHabits(habits.map((h) => (h._id === id ? res.data : h)));
+    } catch (err) {
+      // show the backend message (e.g. "Already checked in today")
+      const msg = err.response?.data?.message || 'Could not check in.';
+      setError(msg);
+      console.error(err);
+    }
+  };
+
+  // helper: has this habit been done today?
+  const isDoneToday = (habit) => {
+    const today = new Date().toISOString().split('T')[0];
+    return habit.completedDates?.includes(today);
   };
 
   return (
@@ -78,6 +96,20 @@ function Habits() {
               <span style={{ marginLeft: 'auto', color: '#888', fontSize: '0.85rem' }}>
                 🔥 {habit.streak} day streak
               </span>
+              <button
+                onClick={() => handleCheckIn(habit._id)}
+                disabled={isDoneToday(habit)}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  background: isDoneToday(habit) ? '#ccc' : '#22c55e',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: isDoneToday(habit) ? 'default' : 'pointer',
+                }}
+              >
+                {isDoneToday(habit) ? '✓ Done' : 'Done today'}
+              </button>
             </li>
           ))}
         </ul>
