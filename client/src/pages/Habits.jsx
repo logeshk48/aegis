@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
+import HabitItem from '../components/HabitItem';
 
 function Habits() {
   const [habits, setHabits] = useState([]);
@@ -40,12 +41,22 @@ function Habits() {
   const handleCheckIn = async (id) => {
     try {
       const res = await api.patch(`/habits/${id}/checkin`);
-      // replace the habit with the updated one (new streak)
       setHabits(habits.map((h) => (h._id === id ? res.data : h)));
     } catch (err) {
-      // show the backend message (e.g. "Already checked in today")
       const msg = err.response?.data?.message || 'Could not check in.';
       setError(msg);
+      console.error(err);
+    }
+  };
+
+  // delete a habit
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this habit? This cannot be undone.')) return;
+    try {
+      await api.delete(`/habits/${id}`);
+      setHabits(habits.filter((h) => h._id !== id));
+    } catch (err) {
+      setError('Could not delete habit.');
       console.error(err);
     }
   };
@@ -80,37 +91,13 @@ function Habits() {
       ) : (
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {habits.map((habit) => (
-            <li
+            <HabitItem
               key={habit._id}
-              style={{
-                border: '1px solid #ddd',
-                borderRadius: '6px',
-                padding: '0.75rem 1rem',
-                marginBottom: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-              }}
-            >
-              <strong>{habit.name}</strong>
-              <span style={{ marginLeft: 'auto', color: '#888', fontSize: '0.85rem' }}>
-                🔥 {habit.streak} day streak
-              </span>
-              <button
-                onClick={() => handleCheckIn(habit._id)}
-                disabled={isDoneToday(habit)}
-                style={{
-                  padding: '0.4rem 0.8rem',
-                  background: isDoneToday(habit) ? '#ccc' : '#22c55e',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: isDoneToday(habit) ? 'default' : 'pointer',
-                }}
-              >
-                {isDoneToday(habit) ? '✓ Done' : 'Done today'}
-              </button>
-            </li>
+              habit={habit}
+              onCheckIn={handleCheckIn}
+              onDelete={handleDelete}
+              isDoneToday={isDoneToday}
+            />
           ))}
         </ul>
       )}
