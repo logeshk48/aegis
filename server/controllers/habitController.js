@@ -9,20 +9,17 @@ const getToday = () => {
 const calculateStreak = (completedDates) => {
   if (completedDates.length === 0) return 0;
 
-  // make a Set for fast lookup
   const dateSet = new Set(completedDates);
-
   let streak = 0;
   const current = new Date();
 
-  // count backwards from today, day by day, while each date is present
   while (true) {
     const dateStr = current.toISOString().split('T')[0];
     if (dateSet.has(dateStr)) {
       streak++;
-      current.setDate(current.getDate() - 1); // step back one day
+      current.setDate(current.getDate() - 1);
     } else {
-      break; // streak broken
+      break;
     }
   }
 
@@ -41,7 +38,7 @@ const createHabit = async (req, res) => {
     }
 
     const habit = await Habit.create({
-      user: req.user._id,          // owner, from auth middleware
+      user: req.user._id,
       name: name.trim(),
       frequency: frequency || 'daily',
     });
@@ -75,19 +72,16 @@ const checkInHabit = async (req, res) => {
       return res.status(404).json({ message: 'Habit not found' });
     }
 
-    // ownership check
     if (habit.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to modify this habit' });
     }
 
     const today = getToday();
 
-    // don't allow marking the same day twice
     if (habit.completedDates.includes(today)) {
       return res.status(400).json({ message: 'Already checked in today' });
     }
 
-    // add today and recalculate the streak
     habit.completedDates.push(today);
     habit.streak = calculateStreak(habit.completedDates);
 
@@ -98,4 +92,23 @@ const checkInHabit = async (req, res) => {
   }
 };
 
-module.exports = { createHabit, getHabits, checkInHabit };
+// @desc   Delete a habit
+// @route  DELETE /api/habits/:id
+// @access Protected
+const deleteHabit = async (req, res) => {
+  try {
+    const habit = await Habit.findById(req.params.id);
+    if (!habit) {
+      return res.status(404).json({ message: 'Habit not found' });
+    }
+    if (habit.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this habit' });
+    }
+    await habit.deleteOne();
+    res.status(200).json({ message: 'Habit deleted', id: req.params.id });
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong', error: error.message });
+  }
+};
+
+module.exports = { createHabit, getHabits, checkInHabit, deleteHabit };

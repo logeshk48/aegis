@@ -4,6 +4,7 @@ const {
   createHabit,
   getHabits,
   checkInHabit,
+  deleteHabit,
 } = require('../controllers/habitController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -18,5 +19,8 @@ router.get('/', getHabits);
 
 // PATCH /api/habits/:id/checkin →  mark habit done for today
 router.patch('/:id/checkin', checkInHabit);
+
+// DELETE /api/habits/:id        →  delete a habit
+router.delete('/:id', deleteHabit);
 
 module.exports = router;
