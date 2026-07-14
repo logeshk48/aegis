@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
+
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const habitRoutes = require('./routes/habitRoutes');
@@ -26,7 +27,18 @@ mongoose
 // routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
-app.use('/api/habits', habitRoutes);   // ← habit routes live under /api/habits
+app.use('/api/habits', habitRoutes);
+
+// TEMPORARY test route
+const { askAI } = require('./services/aiService');
+app.get('/api/ai-test', async (req, res) => {
+  try {
+    const reply = await askAI('Say hello and confirm you are working, in one sentence.');
+    res.json({ reply });
+  } catch (error) {
+    res.status(500).json({ message: 'AI error', error: error.message });
+  }
+});
 
 // health check route
 app.get('/api/health', (req, res) => {
