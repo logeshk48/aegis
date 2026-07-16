@@ -12,6 +12,8 @@ function Tasks() {
 
   // state for the AI input box
   const [aiText, setAiText] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiMessage, setAiMessage] = useState('');
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -48,16 +50,24 @@ function Tasks() {
     e.preventDefault();
     if (!aiText.trim()) return;
 
+    setAiLoading(true);
+    setAiMessage('');
+    setError('');
+
     try {
       const data = await parseTextToTasks(aiText);
-      // add the newly created tasks to the top of the list
       if (data.tasks && data.tasks.length > 0) {
         setTasks([...data.tasks, ...tasks]);
+        setAiMessage(`✨ Created ${data.tasks.length} task(s)!`);
+      } else {
+        setAiMessage('No tasks found in that text. Try being more specific.');
       }
-      setAiText(''); // clear the box
+      setAiText('');
     } catch (err) {
       setError('AI could not process that. Try again.');
       console.error(err);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -89,38 +99,58 @@ function Tasks() {
       {/* AI brain-dump box */}
       <div
         style={{
-          background: '#f5f3ff',
+          background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
           border: '1px solid #ddd6fe',
-          borderRadius: '8px',
-          padding: '1rem',
+          borderRadius: '10px',
+          padding: '1.25rem',
           marginBottom: '1.5rem',
         }}
       >
-        <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>
+        <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem', fontSize: '1.05rem' }}>
           🤖 Tell Aegis your plans
         </label>
+        <p style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: '#6b7280' }}>
+          Type naturally — Aegis will sort it into organized tasks.
+        </p>
         <form onSubmit={handleAiParse}>
           <textarea
             value={aiText}
             onChange={(e) => setAiText(e.target.value)}
             placeholder="e.g. gym after work, finish the report by Friday, call mom tomorrow"
             rows={3}
-            style={{ width: '100%', padding: '0.5rem', boxSizing: 'border-box', resize: 'vertical' }}
+            style={{
+              width: '100%',
+              padding: '0.6rem',
+              boxSizing: 'border-box',
+              resize: 'vertical',
+              border: '1px solid #c4b5fd',
+              borderRadius: '6px',
+              fontFamily: 'inherit',
+              fontSize: '0.95rem',
+            }}
           />
           <button
             type="submit"
+            disabled={aiLoading}
             style={{
-              marginTop: '0.5rem',
-              padding: '0.5rem 1.2rem',
-              background: '#7c3aed',
+              marginTop: '0.6rem',
+              padding: '0.55rem 1.3rem',
+              background: aiLoading ? '#a78bfa' : '#7c3aed',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
-              cursor: 'pointer',
+              cursor: aiLoading ? 'default' : 'pointer',
+              fontWeight: 'bold',
+              fontSize: '0.95rem',
             }}
           >
-            ✨ Organize with AI
+            {aiLoading ? '🤔 Thinking...' : '✨ Organize with AI'}
           </button>
+          {aiMessage && (
+            <p style={{ marginTop: '0.6rem', color: '#7c3aed', fontSize: '0.9rem', fontWeight: 'bold' }}>
+              {aiMessage}
+            </p>
+          )}
         </form>
       </div>
 
