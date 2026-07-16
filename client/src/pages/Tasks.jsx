@@ -10,7 +10,7 @@ function Tasks() {
   const [newTitle, setNewTitle] = useState('');
   const [priority, setPriority] = useState('medium');
 
-  // NEW: state for the AI input box
+  // state for the AI input box
   const [aiText, setAiText] = useState('');
 
   useEffect(() => {
@@ -43,11 +43,22 @@ function Tasks() {
     }
   };
 
-  // NEW: send the AI text (wired up fully in the next commit)
+  // send the AI text, get back tasks, add them to the list
   const handleAiParse = async (e) => {
     e.preventDefault();
     if (!aiText.trim()) return;
-    console.log('AI text to parse:', aiText); // placeholder for now
+
+    try {
+      const data = await parseTextToTasks(aiText);
+      // add the newly created tasks to the top of the list
+      if (data.tasks && data.tasks.length > 0) {
+        setTasks([...data.tasks, ...tasks]);
+      }
+      setAiText(''); // clear the box
+    } catch (err) {
+      setError('AI could not process that. Try again.');
+      console.error(err);
+    }
   };
 
   const handleToggle = async (id) => {
@@ -75,7 +86,7 @@ function Tasks() {
     <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: '600px' }}>
       <h1>My Tasks {!loading && `(${tasks.length})`}</h1>
 
-      {/* NEW: AI brain-dump box */}
+      {/* AI brain-dump box */}
       <div
         style={{
           background: '#f5f3ff',
