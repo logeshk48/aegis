@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
+import {
+  PieChart, Pie, Cell, Tooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, ResponsiveContainer,
+} from 'recharts';
 
 // a small reusable card component
 function StatCard({ label, value, color }) {
@@ -19,6 +23,9 @@ function StatCard({ label, value, color }) {
     </div>
   );
 }
+
+// colors for the priority pie chart
+const PRIORITY_COLORS = { low: '#22c55e', medium: '#eab308', high: '#ef4444' };
 
 function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -56,11 +63,22 @@ function Dashboard() {
     );
   }
 
-  // completion rate as a percentage
   const completionRate =
     stats.tasks.total > 0
       ? Math.round((stats.tasks.completed / stats.tasks.total) * 100)
       : 0;
+
+  // shape the priority data for the pie chart
+  const priorityData = stats.tasks.byPriority.map((p) => ({
+    name: p._id,
+    value: p.count,
+  }));
+
+  // shape the completed/pending data for the bar chart
+  const statusData = [
+    { name: 'Completed', count: stats.tasks.completed },
+    { name: 'Pending', count: stats.tasks.pending },
+  ];
 
   return (
     <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: '800px' }}>
@@ -74,6 +92,42 @@ function Dashboard() {
         <StatCard label="Completed" value={stats.tasks.completed} color="#22c55e" />
         <StatCard label="Pending" value={stats.tasks.pending} color="#f59e0b" />
         <StatCard label="Completion rate" value={`${completionRate}%`} color="#7c3aed" />
+      </div>
+
+      {/* Charts */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginBottom: '2rem' }}>
+        {/* Pie: tasks by priority */}
+        <div style={{ flex: '1 1 300px', background: 'white', border: '1px solid #eee', borderRadius: '10px', padding: '1rem' }}>
+          <h3 style={{ fontSize: '1rem', color: '#444' }}>Tasks by Priority</h3>
+          {priorityData.length === 0 ? (
+            <p style={{ color: '#999' }}>No tasks yet.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie data={priorityData} dataKey="value" nameKey="name" outerRadius={80} label>
+                  {priorityData.map((entry) => (
+                    <Cell key={entry.name} fill={PRIORITY_COLORS[entry.name] || '#999'} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Bar: completed vs pending */}
+        <div style={{ flex: '1 1 300px', background: 'white', border: '1px solid #eee', borderRadius: '10px', padding: '1rem' }}>
+          <h3 style={{ fontSize: '1rem', color: '#444' }}>Completed vs Pending</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={statusData}>
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#4f46e5" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Habit stats */}
