@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const habitRoutes = require('./routes/habitRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 const app = express();
 
@@ -28,7 +29,8 @@ mongoose
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/habits', habitRoutes);
-app.use('/api/ai', aiRoutes);   // ← AI routes live under /api/ai
+app.use('/api/ai', aiRoutes);
+app.use('/api/analytics', analyticsRoutes);   // ← analytics routes
 
 // health check route
 app.get('/api/health', (req, res) => {
