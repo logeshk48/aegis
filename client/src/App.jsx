@@ -4,6 +4,7 @@ import Signup from './pages/Signup';
 import Login from './pages/Login';
 import Tasks from './pages/Tasks';
 import Habits from './pages/Habits';
+import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { logout } from './utils/auth';
 
@@ -26,6 +27,7 @@ function NavBar() {
         <>
           <Link to="/tasks" style={{ marginRight: '1rem' }}>Tasks</Link>
           <Link to="/habits" style={{ marginRight: '1rem' }}>Habits</Link>
+          <Link to="/dashboard" style={{ marginRight: '1rem' }}>Dashboard</Link>
           <span style={{ marginRight: '1rem' }}>Hi, {userName} 👋</span>
           <button onClick={handleLogout} style={{ padding: '0.3rem 0.8rem' }}>
             Logout
@@ -67,6 +69,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Habits />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
             </ProtectedRoute>
           }
         />
