@@ -12,10 +12,24 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 
 const app = express();
 
+// allowed frontend origins (local dev + live site)
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.CLIENT_URL, // our live frontend URL (set on Render later)
+];
+
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // allow requests with no origin (like Thunder Client) or from allowed list
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -30,7 +44,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/habits', habitRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/analytics', analyticsRoutes);   // ← analytics routes
+app.use('/api/analytics', analyticsRoutes);
 
 // health check route
 app.get('/api/health', (req, res) => {
