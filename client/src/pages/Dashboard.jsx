@@ -68,6 +68,9 @@ function Dashboard() {
       ? Math.round((stats.tasks.completed / stats.tasks.total) * 100)
       : 0;
 
+  // if the user has no data at all yet, show a friendly prompt
+  const hasNoData = stats.tasks.total === 0 && stats.habits.total === 0;
+
   // shape the priority data for the pie chart
   const priorityData = stats.tasks.byPriority.map((p) => ({
     name: p._id,
@@ -84,6 +87,22 @@ function Dashboard() {
     <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: '800px' }}>
       <h1>📊 Your Dashboard</h1>
       <p style={{ color: '#666', marginBottom: '1.5rem' }}>Here's how you're doing.</p>
+
+      {hasNoData && (
+        <div
+          style={{
+            background: '#f5f3ff',
+            border: '1px solid #ddd6fe',
+            borderRadius: '10px',
+            padding: '1.5rem',
+            marginBottom: '1.5rem',
+          }}
+        >
+          <p style={{ margin: 0, color: '#6b21a8' }}>
+            📭 No data yet! Add some tasks and habits, and your stats will appear here.
+          </p>
+        </div>
+      )}
 
       {/* Task stats */}
       <h2 style={{ fontSize: '1.1rem', color: '#444' }}>Tasks</h2>
