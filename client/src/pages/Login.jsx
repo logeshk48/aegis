@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 
 function Login() {
@@ -16,11 +16,7 @@ function Login() {
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        'http://localhost:5000/api/auth/login',
-        { email, password },
-        { withCredentials: true } // needed so the refresh cookie is set
-      );
+      const res = await api.post('/auth/login', { email, password });
 
       // store the access token so we can use it on future requests
       localStorage.setItem('accessToken', res.data.accessToken);
