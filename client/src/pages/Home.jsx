@@ -16,7 +16,7 @@ function Home() {
 
   return (
     <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: '600px' }}>
-      <h1>Welcome back, {userName} 👋</h1>
+      <h1 className="text-3xl font-bold text-indigo-600">Welcome back, {userName} 👋</h1>
       <p>This is your Aegis dashboard. Ready to get organized?</p>
       <Link to="/tasks" style={linkStyle}>Go to My Tasks →</Link>
       <Link to="/dashboard" style={linkStyle}>View Dashboard 📊</Link>
