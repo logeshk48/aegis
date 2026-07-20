@@ -1,71 +1,44 @@
-// map each priority to a color
-const priorityColors = {
-  low: '#22c55e',      // green
-  medium: '#eab308',   // yellow
-  high: '#ef4444',     // red
+const priorityStyles = {
+  low: 'bg-green-100 text-green-700',
+  medium: 'bg-amber-100 text-amber-700',
+  high: 'bg-red-100 text-red-700',
 };
 
 function TaskItem({ task, onToggle, onDelete }) {
   return (
     <li
-      style={{
-        border: '1px solid #ddd',
-        borderRadius: '6px',
-        padding: '0.75rem 1rem',
-        marginBottom: '0.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem',
-        background: task.completed ? '#f5f5f5' : 'white',
-      }}
+      className={`group flex items-center gap-3 px-4 py-3 rounded-lg border transition ${
+        task.completed
+          ? 'bg-slate-50 border-slate-200'
+          : 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-sm'
+      }`}
     >
       <input
         type="checkbox"
         checked={task.completed}
         onChange={() => onToggle(task._id)}
-        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+        className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
       />
-      <strong
-        style={{
-          textDecoration: task.completed ? 'line-through' : 'none',
-          color: task.completed ? '#999' : '#000',
-        }}
-      >
-        {task.title}
-      </strong>
 
       <span
-        style={{
-          marginLeft: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.35rem',
-          color: '#888',
-          fontSize: '0.8rem',
-        }}
+        className={`flex-1 text-sm ${
+          task.completed ? 'line-through text-slate-400' : 'text-slate-800 font-medium'
+        }`}
       >
-        <span
-          style={{
-            width: '10px',
-            height: '10px',
-            borderRadius: '50%',
-            background: priorityColors[task.priority] || '#999',
-            display: 'inline-block',
-          }}
-        />
+        {task.title}
+      </span>
+
+      <span
+        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+          priorityStyles[task.priority] || 'bg-slate-100 text-slate-600'
+        }`}
+      >
         {task.priority}
       </span>
 
       <button
         onClick={() => onDelete(task._id)}
-        style={{
-          border: 'none',
-          background: 'transparent',
-          color: '#c00',
-          cursor: 'pointer',
-          fontSize: '1.1rem',
-          padding: '0 0.25rem',
-        }}
+        className="text-slate-300 hover:text-red-500 transition text-lg leading-none px-1"
         title="Delete task"
       >
         ✕
