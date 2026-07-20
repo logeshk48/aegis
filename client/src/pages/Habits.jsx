@@ -26,7 +26,6 @@ function Habits() {
   const handleAddHabit = async (e) => {
     e.preventDefault();
     if (!newName.trim()) return;
-
     try {
       const res = await api.post('/habits', { name: newName });
       setHabits([res.data, ...habits]);
@@ -37,7 +36,6 @@ function Habits() {
     }
   };
 
-  // mark a habit done for today
   const handleCheckIn = async (id) => {
     try {
       const res = await api.patch(`/habits/${id}/checkin`);
@@ -49,7 +47,6 @@ function Habits() {
     }
   };
 
-  // delete a habit
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this habit? This cannot be undone.')) return;
     try {
@@ -61,35 +58,48 @@ function Habits() {
     }
   };
 
-  // helper: has this habit been done today?
   const isDoneToday = (habit) => {
     const today = new Date().toISOString().split('T')[0];
     return habit.completedDates?.includes(today);
   };
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: '600px' }}>
-      <h1>My Habits {!loading && `(${habits.length})`}</h1>
+    <div className="max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold text-slate-900 mb-1">My Habits</h1>
+      <p className="text-slate-500 text-sm mb-6">
+        Build streaks by checking in every day. 🔥
+      </p>
 
-      <form onSubmit={handleAddHabit} style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem' }}>
+      <form onSubmit={handleAddHabit} className="flex gap-2 mb-6">
         <input
           type="text"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder="e.g. Read 10 pages, Gym, Drink water"
-          style={{ flex: 1, padding: '0.5rem' }}
+          className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
-        <button type="submit" style={{ padding: '0.5rem 1rem' }}>Add Habit</button>
+        <button
+          type="submit"
+          className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition"
+        >
+          Add Habit
+        </button>
       </form>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && (
+        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+          {error}
+        </p>
+      )}
 
       {loading ? (
-        <p style={{ color: '#888' }}>Loading your habits...</p>
+        <p className="text-slate-400 text-sm">Loading your habits...</p>
       ) : habits.length === 0 ? (
-        <p style={{ color: '#888' }}>No habits yet. Start one above! 🔥</p>
+        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl">
+          <p className="text-slate-400">No habits yet. Start one above! 🔥</p>
+        </div>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
+        <ul className="space-y-2">
           {habits.map((habit) => (
             <HabitItem
               key={habit._id}

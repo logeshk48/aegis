@@ -3,62 +3,33 @@ function HabitItem({ habit, onCheckIn, onDelete, isDoneToday }) {
 
   return (
     <li
-      style={{
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        padding: '0.85rem 1rem',
-        marginBottom: '0.6rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem',
-        background: done ? '#f0fdf4' : 'white',
-      }}
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition ${
+        done
+          ? 'bg-green-50 border-green-200'
+          : 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-sm'
+      }`}
     >
-      <strong style={{ fontSize: '1rem' }}>{habit.name}</strong>
+      <span className="flex-1 text-sm font-medium text-slate-800">{habit.name}</span>
 
-      <span
-        style={{
-          marginLeft: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.3rem',
-          background: '#fff7ed',
-          color: '#c2410c',
-          padding: '0.2rem 0.6rem',
-          borderRadius: '999px',
-          fontSize: '0.85rem',
-          fontWeight: 'bold',
-        }}
-        title="Current streak"
-      >
+      <span className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600">
         🔥 {habit.streak}
       </span>
 
       <button
         onClick={() => onCheckIn(habit._id)}
         disabled={done}
-        style={{
-          padding: '0.4rem 0.8rem',
-          background: done ? '#ccc' : '#22c55e',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: done ? 'default' : 'pointer',
-        }}
+        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+          done
+            ? 'bg-slate-100 text-slate-400 cursor-default'
+            : 'bg-green-600 text-white hover:bg-green-700'
+        }`}
       >
         {done ? '✓ Done' : 'Done today'}
       </button>
 
       <button
         onClick={() => onDelete(habit._id)}
-        style={{
-          border: 'none',
-          background: 'transparent',
-          color: '#c00',
-          cursor: 'pointer',
-          fontSize: '1.1rem',
-          padding: '0 0.25rem',
-        }}
+        className="text-slate-300 hover:text-red-500 transition text-lg leading-none px-1"
         title="Delete habit"
       >
         ✕
