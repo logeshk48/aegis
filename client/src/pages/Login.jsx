@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import api from '../api/axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -18,12 +18,11 @@ function Login() {
     try {
       const res = await api.post('/auth/login', { email, password });
 
-      // store the access token so we can use it on future requests
       localStorage.setItem('accessToken', res.data.accessToken);
       localStorage.setItem('userName', res.data.user.name);
 
       setMessage('✅ Logged in! Redirecting...');
-      setTimeout(() => navigate('/'), 1200);
+      setTimeout(() => navigate('/'), 1000);
     } catch (err) {
       const errorMsg =
         err.response?.data?.message || 'Something went wrong. Try again.';
@@ -34,38 +33,54 @@ function Login() {
   };
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: '400px' }}>
-      <h1>Log In to Aegis</h1>
+    <div className="flex justify-center pt-8">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+        <h1 className="text-2xl font-bold text-slate-900 mb-1">Welcome back</h1>
+        <p className="text-slate-500 text-sm mb-6">Log in to your Aegis account.</p>
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Email</label><br />
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            style={{ width: '100%', padding: '0.5rem' }}
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
 
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Password</label><br />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Your password"
-            style={{ width: '100%', padding: '0.5rem' }}
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Your password"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
 
-        <button type="submit" disabled={loading} style={{ padding: '0.5rem 1rem' }}>
-          {loading ? 'Logging in...' : 'Log In'}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-indigo-400 transition"
+          >
+            {loading ? 'Logging in...' : 'Log In'}
+          </button>
+        </form>
 
-      {message && <p style={{ marginTop: '1rem' }}>{message}</p>}
+        {message && (
+          <p className="mt-4 text-sm text-center text-slate-700">{message}</p>
+        )}
+
+        <p className="mt-6 text-sm text-center text-slate-500">
+          Don't have an account?{' '}
+          <Link to="/signup" className="text-indigo-600 font-medium hover:underline">
+            Sign up
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
