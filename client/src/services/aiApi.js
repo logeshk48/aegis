@@ -6,7 +6,7 @@ export const parseTextToTasks = async (text) => {
   return res.data; // { message, tasks }
 };
 
-// ask a question about your own data (RAG)
+// ask the AI a question about your own data
 export const askAegis = async (question) => {
   const res = await api.post('/ai/ask', { question });
   return res.data; // { question, answer }

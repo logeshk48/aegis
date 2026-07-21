@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import TaskItem from '../components/TaskItem';
+import AskAegis from '../components/AskAegis';
 import { parseTextToTasks } from '../services/aiApi';
 
 function Tasks() {
@@ -123,6 +124,9 @@ function Tasks() {
           )}
         </form>
       </div>
+
+      {/* Ask Aegis — question answering */}
+      <AskAegis />
 
       {/* manual add form */}
       <form onSubmit={handleAddTask} className="flex gap-2 mb-6">
