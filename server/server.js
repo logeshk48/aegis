@@ -9,13 +9,14 @@ const taskRoutes = require('./routes/taskRoutes');
 const habitRoutes = require('./routes/habitRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const digestRoutes = require('./routes/digestRoutes');
 
 const app = express();
 
 // allowed frontend origins (local dev + live site)
 const allowedOrigins = [
   'http://localhost:5173',
-  process.env.CLIENT_URL, // our live frontend URL (set on Render later)
+  process.env.CLIENT_URL, // our live frontend URL
 ];
 
 app.use(cors({
@@ -45,6 +46,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/habits', habitRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/digest', digestRoutes);
 
 // health check route
 app.get('/api/health', (req, res) => {
