@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
+const { startDigestJob } = require('./jobs/digestJob');
+
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const habitRoutes = require('./routes/habitRoutes');
@@ -34,10 +36,13 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// connect to MongoDB
+// connect to MongoDB, then start scheduled jobs
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+    startDigestJob(); // start the scheduled daily digest job
+  })
   .catch((err) => console.error('❌ MongoDB connection error:', err.message));
 
 // routes
