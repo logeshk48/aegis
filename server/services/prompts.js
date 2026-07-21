@@ -16,4 +16,24 @@ Rules:
 User's text: "${userText}"`;
 };
 
-module.exports = { buildTaskParsePrompt };
+// builds the prompt for answering questions about the user's own data
+const buildQuestionPrompt = (context, question) => {
+  return `You are Aegis, a helpful personal assistant. Answer the user's question using ONLY the data provided below about their tasks and habits.
+
+IMPORTANT RULES:
+- Answer ONLY from the data given. Do not invent or assume anything.
+- If the data doesn't contain the answer, say so honestly (e.g. "I don't have a record of that").
+- Be concise and friendly — 1 to 3 sentences.
+- When mentioning dates, write them naturally (e.g. "July 14" instead of "2026-07-14").
+- Do not list all the data back; just answer what was asked.
+
+--- USER'S DATA ---
+${context}
+--- END OF DATA ---
+
+User's question: "${question}"
+
+Your answer:`;
+};
+
+module.exports = { buildTaskParsePrompt, buildQuestionPrompt };
