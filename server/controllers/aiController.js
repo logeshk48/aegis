@@ -1,5 +1,5 @@
 const Task = require('../models/Task');
-const { parseTasksFromText } = require('../services/aiService');
+const { parseTasksFromText, answerUserQuestion } = require('../services/aiService');
 
 // @desc   Parse text into tasks using AI, then save them
 // @route  POST /api/ai/parse
@@ -12,7 +12,6 @@ const parseAndCreateTasks = async (req, res) => {
       return res.status(400).json({ message: 'Please provide some text to parse' });
     }
 
-    // 1. ask the AI to extract validated tasks
     const parsedTasks = await parseTasksFromText(text);
 
     if (parsedTasks.length === 0) {
@@ -22,7 +21,6 @@ const parseAndCreateTasks = async (req, res) => {
       });
     }
 
-    // 2. save each parsed task, tied to the logged-in user
     const tasksToCreate = parsedTasks.map((task) => ({
       user: req.user._id,
       title: task.title,
@@ -32,7 +30,6 @@ const parseAndCreateTasks = async (req, res) => {
 
     const createdTasks = await Task.insertMany(tasksToCreate);
 
-    // 3. return the created tasks
     res.status(201).json({
       message: `Created ${createdTasks.length} task(s) from your text.`,
       tasks: createdTasks,
@@ -43,4 +40,24 @@ const parseAndCreateTasks = async (req, res) => {
   }
 };
 
-module.exports = { parseAndCreateTasks };
+// @desc   Answer a question about the user's own data (RAG)
+// @route  POST /api/ai/ask
+// @access Protected
+const askAboutMyData = async (req, res) => {
+  try {
+    const { question } = req.body;
+
+    if (!question || !question.trim()) {
+      return res.status(400).json({ message: 'Please provide a question' });
+    }
+
+    const answer = await answerUserQuestion(req.user._id, question.trim());
+
+    res.status(200).json({ question: question.trim(), answer });
+  } catch (error) {
+    console.error('AI ask error:', error.message);
+    res.status(500).json({ message: 'Could not answer that', error: error.message });
+  }
+};
+
+module.exports = { parseAndCreateTasks, askAboutMyData };
