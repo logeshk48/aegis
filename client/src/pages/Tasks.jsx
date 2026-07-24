@@ -160,6 +160,12 @@ function Tasks() {
             )}
           </div>
 
+          {!isSupported && (
+            <p className="mt-2 text-xs text-slate-400">
+              💡 Voice input isn't supported in this browser — try Chrome or Edge to speak your plans.
+            </p>
+          )}
+
           {aiMessage && (
             <p className="mt-3 text-sm font-medium text-indigo-700">{aiMessage}</p>
           )}
