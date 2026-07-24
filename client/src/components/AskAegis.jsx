@@ -1,11 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { askAegis } from '../services/aiApi';
+import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 
 function AskAegis() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // voice input
+  const { isSupported, listening, transcript, startListening, stopListening } =
+    useSpeechRecognition();
+
+  // when speech is recognized, put it in the question box
+  useEffect(() => {
+    if (transcript) {
+      setQuestion(transcript);
+    }
+  }, [transcript]);
 
   const suggestions = [
     'What are my high priority tasks?',
@@ -40,7 +52,7 @@ function AskAegis() {
         <span>💬</span> Ask Aegis
       </h2>
       <p className="text-sm text-slate-500 mt-0.5 mb-3">
-        Ask anything about your tasks and habits.
+        Ask anything about your tasks and habits — type or speak.
       </p>
 
       <form onSubmit={handleAsk} className="flex gap-2">
@@ -51,6 +63,22 @@ function AskAegis() {
           placeholder="e.g. What's overdue? How many tasks did I finish?"
           className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
+
+        {isSupported && (
+          <button
+            type="button"
+            onClick={listening ? stopListening : startListening}
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
+              listening
+                ? 'bg-red-500 text-white hover:bg-red-600'
+                : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50'
+            }`}
+            title={listening ? 'Stop listening' : 'Speak your question'}
+          >
+            {listening ? '⏹' : '🎤'}
+          </button>
+        )}
+
         <button
           type="submit"
           disabled={loading}
@@ -59,6 +87,16 @@ function AskAegis() {
           {loading ? 'Thinking...' : 'Ask'}
         </button>
       </form>
+
+      {listening && (
+        <div className="flex items-center gap-2 mt-2 text-sm text-red-600">
+          <span className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+          </span>
+          Listening... ask your question
+        </div>
+      )}
 
       {/* suggestion chips */}
       <div className="flex flex-wrap gap-2 mt-3">
