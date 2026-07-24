@@ -3,6 +3,7 @@ import api from '../api/axios';
 import TaskItem from '../components/TaskItem';
 import AskAegis from '../components/AskAegis';
 import { parseTextToTasks } from '../services/aiApi';
+import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 
 function Tasks() {
   const [tasks, setTasks] = useState([]);
@@ -13,6 +14,17 @@ function Tasks() {
   const [aiText, setAiText] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
+
+  // voice input
+  const { isSupported, listening, transcript, startListening, stopListening } =
+    useSpeechRecognition();
+
+  // when speech is recognized, put it in the AI textarea
+  useEffect(() => {
+    if (transcript) {
+      setAiText((prev) => (prev ? prev + ' ' + transcript : transcript));
+    }
+  }, [transcript]);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -101,7 +113,7 @@ function Tasks() {
           <span>🤖</span> Tell Aegis your plans
         </h2>
         <p className="text-sm text-slate-500 mt-0.5 mb-3">
-          Type naturally — Aegis will sort it into organized tasks.
+          Type or speak naturally — Aegis will sort it into organized tasks.
         </p>
 
         <form onSubmit={handleAiParse}>
@@ -112,13 +124,32 @@ function Tasks() {
             rows={3}
             className="w-full px-3 py-2 rounded-lg border border-indigo-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
           />
-          <button
-            type="submit"
-            disabled={aiLoading}
-            className="mt-3 px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-400 transition"
-          >
-            {aiLoading ? '🤔 Thinking...' : '✨ Organize with AI'}
-          </button>
+
+          <div className="flex items-center gap-2 mt-3">
+            <button
+              type="submit"
+              disabled={aiLoading}
+              className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-400 transition"
+            >
+              {aiLoading ? '🤔 Thinking...' : '✨ Organize with AI'}
+            </button>
+
+            {isSupported && (
+              <button
+                type="button"
+                onClick={listening ? stopListening : startListening}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  listening
+                    ? 'bg-red-500 text-white hover:bg-red-600'
+                    : 'bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50'
+                }`}
+                title={listening ? 'Stop listening' : 'Speak your plans'}
+              >
+                {listening ? '⏹ Stop' : '🎤 Speak'}
+              </button>
+            )}
+          </div>
+
           {aiMessage && (
             <p className="mt-3 text-sm font-medium text-indigo-700">{aiMessage}</p>
           )}
