@@ -125,6 +125,16 @@ function Tasks() {
             className="w-full px-3 py-2 rounded-lg border border-indigo-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
           />
 
+          {listening && (
+            <div className="flex items-center gap-2 mt-2 text-sm text-red-600">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+              Listening... speak now
+            </div>
+          )}
+
           <div className="flex items-center gap-2 mt-3">
             <button
               type="submit"
