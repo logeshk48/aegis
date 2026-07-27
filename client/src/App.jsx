@@ -1,11 +1,12 @@
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, CheckSquare, Flame, BarChart3, LogOut } from 'lucide-react';
+import { Home as HomeIcon, CheckSquare, Flame, BarChart3, BookOpen, LogOut } from 'lucide-react';
 import Home from './pages/Home';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 import Tasks from './pages/Tasks';
 import Habits from './pages/Habits';
 import Dashboard from './pages/Dashboard';
+import Diary from './pages/Diary';
 import ProtectedRoute from './components/ProtectedRoute';
 import { logout } from './utils/auth';
 
@@ -25,6 +26,7 @@ function PillNav() {
     { to: '/', label: 'Home', icon: HomeIcon },
     { to: '/tasks', label: 'Tasks', icon: CheckSquare },
     { to: '/habits', label: 'Habits', icon: Flame },
+    { to: '/diary', label: 'Diary', icon: BookOpen },
     { to: '/dashboard', label: 'Stats', icon: BarChart3 },
   ];
 
@@ -73,6 +75,7 @@ function App() {
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
           <Route path="/habits" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
+          <Route path="/diary" element={<ProtectedRoute><Diary /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
