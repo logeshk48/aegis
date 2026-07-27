@@ -1,11 +1,12 @@
 const Task = require('../models/Task');
 const Habit = require('../models/Habit');
+const DiaryEntry = require('../models/DiaryEntry');
 
 // gather a user's data into a text summary the AI can read
 const buildUserContext = async (userId) => {
   const today = new Date().toISOString().split('T')[0];
 
-  // fetch the user's tasks (most recent 50 to keep the prompt manageable)
+  // fetch the user's tasks (most recent 50)
   const tasks = await Task.find({ user: userId })
     .sort({ createdAt: -1 })
     .limit(50);
@@ -13,7 +14,12 @@ const buildUserContext = async (userId) => {
   // fetch all habits
   const habits = await Habit.find({ user: userId });
 
-  // --- format tasks as readable lines ---
+  // fetch recent diary entries (most recent 20)
+  const diaryEntries = await DiaryEntry.find({ user: userId })
+    .sort({ entryDate: -1 })
+    .limit(20);
+
+  // --- format tasks ---
   const taskLines =
     tasks.length > 0
       ? tasks
@@ -31,7 +37,7 @@ const buildUserContext = async (userId) => {
           .join('\n')
       : '(no tasks)';
 
-  // --- format habits with their completion history ---
+  // --- format habits ---
   const habitLines =
     habits.length > 0
       ? habits
@@ -45,13 +51,24 @@ const buildUserContext = async (userId) => {
           .join('\n')
       : '(no habits)';
 
+  // --- format diary entries ---
+  const diaryLines =
+    diaryEntries.length > 0
+      ? diaryEntries
+          .map((d) => `[${d.entryDate}]: ${d.content}`)
+          .join('\n\n')
+      : '(no diary entries)';
+
   return `Today's date is ${today}.
 
 USER'S TASKS:
 ${taskLines}
 
 USER'S HABITS:
-${habitLines}`;
+${habitLines}
+
+USER'S DIARY ENTRIES:
+${diaryLines}`;
 };
 
 module.exports = { buildUserContext };
