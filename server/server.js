@@ -12,6 +12,7 @@ const habitRoutes = require('./routes/habitRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const digestRoutes = require('./routes/digestRoutes');
+const diaryRoutes = require('./routes/diaryRoutes');
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use('/api/habits', habitRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/digest', digestRoutes);
+app.use('/api/diary', diaryRoutes);
 
 // health check route
 app.get('/api/health', (req, res) => {
