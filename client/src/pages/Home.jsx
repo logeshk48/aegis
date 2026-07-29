@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
+import AskAegis from '../components/AskAegis';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
@@ -211,6 +212,11 @@ function Home() {
           </div>
         </div>
       )}
+
+      {/* Ask Aegis */}
+      <div className="mb-8">
+        <AskAegis />
+      </div>
     </div>
   );
 }
