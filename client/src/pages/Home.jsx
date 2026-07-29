@@ -52,6 +52,18 @@ function Home() {
     }
   };
 
+  const handleCheckIn = async (id) => {
+    try {
+      const res = await api.patch(`/habits/${id}/checkin`);
+      setHabits(habits.map((h) => (h._id === id ? res.data : h)));
+    } catch (err) {
+      console.error('Could not check in habit:', err);
+    }
+  };
+
+  const isHabitDoneToday = (habit) =>
+    habit.completedDates?.includes(todayStr());
+
   const overdueTasks = tasks.filter(isOverdue);
   const dueTodayTasks = tasks.filter(isDueToday);
   const pendingTasks = tasks.filter((t) => !t.completed);
@@ -161,6 +173,44 @@ function Home() {
           </div>
         )}
       </div>
+
+      {/* Habits */}
+      {habits.length > 0 && (
+        <div className="mb-8">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
+            🔥 Today's habits
+          </h2>
+          <div className="space-y-2">
+            {habits.map((habit) => {
+              const done = isHabitDoneToday(habit);
+              return (
+                <div
+                  key={habit._id}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition ${
+                    done ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200'
+                  }`}
+                >
+                  <span className="flex-1 text-sm font-medium text-slate-800">{habit.name}</span>
+                  <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">
+                    🔥 {habit.streak}
+                  </span>
+                  <button
+                    onClick={() => handleCheckIn(habit._id)}
+                    disabled={done}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                      done
+                        ? 'bg-slate-100 text-slate-400 cursor-default'
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
+                  >
+                    {done ? '✓ Done' : 'Check in'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
