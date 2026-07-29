@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 
-// helpers for date logic
 const todayStr = () => new Date().toISOString().split('T')[0];
 
 const isOverdue = (task) => {
@@ -12,6 +11,12 @@ const isOverdue = (task) => {
 const isDueToday = (task) => {
   if (!task.dueDate || task.completed) return false;
   return new Date(task.dueDate).toISOString().split('T')[0] === todayStr();
+};
+
+const priorityDot = {
+  low: 'bg-green-500',
+  medium: 'bg-amber-500',
+  high: 'bg-red-500',
 };
 
 function Home() {
@@ -38,7 +43,15 @@ function Home() {
     fetchData();
   }, []);
 
-  // compute the useful groupings
+  const handleToggle = async (id) => {
+    try {
+      const res = await api.patch(`/tasks/${id}/toggle`);
+      setTasks(tasks.map((t) => (t._id === id ? res.data : t)));
+    } catch (err) {
+      console.error('Could not toggle task:', err);
+    }
+  };
+
   const overdueTasks = tasks.filter(isOverdue);
   const dueTodayTasks = tasks.filter(isDueToday);
   const pendingTasks = tasks.filter((t) => !t.completed);
@@ -54,6 +67,20 @@ function Home() {
     return <p className="text-slate-400 text-sm max-w-3xl mx-auto">Loading your day...</p>;
   }
 
+  // a small reusable task row
+  const TaskRow = ({ task }) => (
+    <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-slate-200">
+      <input
+        type="checkbox"
+        checked={task.completed}
+        onChange={() => handleToggle(task._id)}
+        className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+      />
+      <span className={`w-2 h-2 rounded-full ${priorityDot[task.priority] || 'bg-slate-400'}`}></span>
+      <span className="flex-1 text-sm text-slate-800">{task.title}</span>
+    </div>
+  );
+
   return (
     <div className="max-w-3xl mx-auto">
       <h1 className="text-3xl font-bold text-slate-900">
@@ -65,10 +92,50 @@ function Home() {
           : `You have ${pendingTasks.length} thing${pendingTasks.length > 1 ? 's' : ''} on your plate.`}
       </p>
 
-      {/* Next commits will render: reminders, stats, habit check-ins, assistant.
-          For now, a quick sanity check that data loaded: */}
-      <div className="text-sm text-slate-400">
-        {overdueTasks.length} overdue · {dueTodayTasks.length} due today · {habits.length} habits
+      {/* Overdue alert */}
+      {overdueTasks.length > 0 && (
+        <div className="mb-6">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-red-700 mb-2">
+            ⏰ Overdue ({overdueTasks.length})
+          </h2>
+          <div className="space-y-2">
+            {overdueTasks.map((task) => (
+              <div
+                key={task._id}
+                className="flex items-center gap-3 px-4 py-3 bg-red-50 rounded-lg border border-red-200"
+              >
+                <input
+                  type="checkbox"
+                  checked={task.completed}
+                  onChange={() => handleToggle(task._id)}
+                  className="w-5 h-5 rounded border-red-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                />
+                <span className="flex-1 text-sm text-slate-800">{task.title}</span>
+                <span className="text-xs text-red-600 font-medium">
+                  {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Due today */}
+      <div className="mb-8">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
+          📅 Due today ({dueTodayTasks.length})
+        </h2>
+        {dueTodayTasks.length === 0 ? (
+          <div className="px-4 py-6 bg-white rounded-lg border border-dashed border-slate-200 text-center text-sm text-slate-400">
+            Nothing due today. {overdueTasks.length === 0 ? 'Enjoy the breathing room. 🌤️' : ''}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {dueTodayTasks.map((task) => (
+              <TaskRow key={task._id} task={task} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
