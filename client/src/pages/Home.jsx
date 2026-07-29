@@ -56,6 +56,14 @@ function Home() {
   const dueTodayTasks = tasks.filter(isDueToday);
   const pendingTasks = tasks.filter((t) => !t.completed);
 
+  // completed today (tasks marked done today)
+  const completedToday = tasks.filter(
+    (t) => t.completed && new Date(t.updatedAt).toISOString().split('T')[0] === todayStr()
+  ).length;
+
+  // best current streak across habits
+  const bestStreak = habits.reduce((max, h) => Math.max(max, h.streak || 0), 0);
+
   const greeting = (() => {
     const h = new Date().getHours();
     if (h < 12) return 'Good morning';
@@ -91,6 +99,22 @@ function Home() {
           ? "You're all caught up. Nice. 🎉"
           : `You have ${pendingTasks.length} thing${pendingTasks.length > 1 ? 's' : ''} on your plate.`}
       </p>
+
+      {/* Quick stats */}
+      <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
+          <div className="text-2xl font-bold text-indigo-600">{pendingTasks.length}</div>
+          <div className="text-xs text-slate-500 mt-1">Pending</div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
+          <div className="text-2xl font-bold text-green-600">{completedToday}</div>
+          <div className="text-xs text-slate-500 mt-1">Done today</div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 text-center">
+          <div className="text-2xl font-bold text-orange-500">🔥 {bestStreak}</div>
+          <div className="text-xs text-slate-500 mt-1">Best streak</div>
+        </div>
+      </div>
 
       {/* Overdue alert */}
       {overdueTasks.length > 0 && (
