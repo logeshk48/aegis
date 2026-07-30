@@ -36,4 +36,34 @@ User's question: "${question}"
 Your answer:`;
 };
 
-module.exports = { buildTaskParsePrompt, buildQuestionPrompt };
+// builds the prompt for generating personalized suggestions from user data
+const buildSuggestionsPrompt = (context) => {
+  return `You are Aegis, a thoughtful personal assistant. Analyze the user's tasks, habits, and diary entries below, and suggest a few personalized habits or tasks that would genuinely help them.
+
+Look for patterns like:
+- Activities they mention repeatedly in their diary that aren't yet tracked as habits
+- Recurring tasks that could become habits
+- Things they seem to care about or struggle with
+- Gaps (e.g. they track work tasks but no self-care)
+
+Return ONLY a valid JSON array (no markdown, no code fences, no explanation). Each suggestion must be an object with these exact fields:
+- "type": either "habit" or "task"
+- "title": a short, clear name for the habit or task (string)
+- "reason": one friendly sentence explaining why you're suggesting this, referencing their actual data (string)
+
+Rules:
+- Suggest between 2 and 4 items. Quality over quantity.
+- Base every suggestion on something REAL in their data. Reference it in the reason.
+- Do NOT suggest things they already track as habits.
+- If there isn't enough data to suggest anything meaningful, return an empty array [].
+- Keep titles short (2-5 words). Keep reasons warm and specific.
+- Return ONLY the JSON array.
+
+--- USER'S DATA ---
+${context}
+--- END OF DATA ---
+
+Your suggestions (JSON array):`;
+};
+
+module.exports = { buildTaskParsePrompt, buildQuestionPrompt, buildSuggestionsPrompt };
