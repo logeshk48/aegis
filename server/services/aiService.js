@@ -1,5 +1,9 @@
 const Groq = require('groq-sdk');
-const { buildTaskParsePrompt, buildQuestionPrompt } = require('./prompts');
+const {
+  buildTaskParsePrompt,
+  buildQuestionPrompt,
+  buildSuggestionsPrompt,
+} = require('./prompts');
 const { buildUserContext } = require('./contextService');
 
 // generic function: send any prompt, get the AI's text reply
@@ -40,6 +44,18 @@ const validateTask = (task) => {
   };
 };
 
+// validate one suggestion object
+const validateSuggestion = (s) => {
+  if (!s || typeof s.title !== 'string' || !s.title.trim()) return null;
+  if (s.type !== 'habit' && s.type !== 'task') return null;
+
+  return {
+    type: s.type,
+    title: s.title.trim(),
+    reason: typeof s.reason === 'string' ? s.reason.trim() : '',
+  };
+};
+
 // parse tasks from natural-language text using the AI
 const parseTasksFromText = async (userText) => {
   const prompt = buildTaskParsePrompt(userText);
@@ -58,25 +74,52 @@ const parseTasksFromText = async (userText) => {
     throw new Error('AI response was not a list of tasks');
   }
 
-  const validTasks = parsed
-    .map(validateTask)
-    .filter((task) => task !== null);
-
-  return validTasks;
+  return parsed.map(validateTask).filter((task) => task !== null);
 };
 
 // answer a question about the user's own data (RAG)
 const answerUserQuestion = async (userId, question) => {
-  // 1. RETRIEVE: gather the user's data as context
+  // 1. RETRIEVE
   const context = await buildUserContext(userId);
-
-  // 2. AUGMENT: build a prompt containing the data + the question
+  // 2. AUGMENT
   const prompt = buildQuestionPrompt(context, question);
-
-  // 3. GENERATE: let the AI answer, grounded in that data
+  // 3. GENERATE
   const answer = await askAI(prompt);
 
   return answer.trim();
 };
 
-module.exports = { askAI, parseTasksFromText, answerUserQuestion };
+// generate personalized habit/task suggestions from the user's data (RAG)
+const generateSuggestions = async (userId) => {
+  // 1. RETRIEVE: gather everything we know about the user
+  const context = await buildUserContext(userId);
+  // 2. AUGMENT: build the suggestions prompt around it
+  const prompt = buildSuggestionsPrompt(context);
+  // 3. GENERATE
+  const rawReply = await askAI(prompt);
+
+  const cleaned = cleanJsonString(rawReply);
+
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (err) {
+    // if the AI didn't return valid JSON, return nothing rather than crashing
+    console.error('Suggestions JSON parse failed:', err.message);
+    return [];
+  }
+
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed
+    .map(validateSuggestion)
+    .filter((s) => s !== null)
+    .slice(0, 4); // cap at 4
+};
+
+module.exports = {
+  askAI,
+  parseTasksFromText,
+  answerUserQuestion,
+  generateSuggestions,
+};
