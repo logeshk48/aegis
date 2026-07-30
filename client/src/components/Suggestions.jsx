@@ -5,6 +5,7 @@ function Suggestions({ onAccept }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(null);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -25,10 +26,12 @@ function Suggestions({ onAccept }) {
     setAccepting(index);
     try {
       await onAccept(suggestion);
+      setMessage(`✅ Added "${suggestion.title}" to your ${suggestion.type}s.`);
       // remove it from the list once accepted
       setSuggestions((prev) => prev.filter((_, i) => i !== index));
     } catch (err) {
       console.error('Could not accept suggestion:', err);
+      setMessage('Could not add that. Try again.');
     } finally {
       setAccepting(null);
     }
@@ -38,7 +41,19 @@ function Suggestions({ onAccept }) {
     setSuggestions((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // don't render anything if loading or nothing to suggest
+  const handleRefresh = async () => {
+    setLoading(true);
+    setMessage('');
+    try {
+      const data = await getSuggestions();
+      setSuggestions(data.suggestions || []);
+    } catch (err) {
+      console.error('Could not refresh suggestions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="mb-8">
@@ -50,13 +65,35 @@ function Suggestions({ onAccept }) {
     );
   }
 
-  if (suggestions.length === 0) return null;
+  // nothing left to suggest — show a confirmation + refresh option if they just acted
+  if (suggestions.length === 0) {
+    return message ? (
+      <div className="mb-8">
+        <p className="text-xs text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
+          {message}
+        </p>
+        <button
+          onClick={handleRefresh}
+          className="mt-2 text-xs text-indigo-600 hover:underline"
+        >
+          Get new suggestions
+        </button>
+      </div>
+    ) : null;
+  }
 
   return (
     <div className="mb-8">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
         💡 Aegis noticed...
       </h2>
+
+      {message && (
+        <p className="text-xs text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2 mb-2">
+          {message}
+        </p>
+      )}
+
       <div className="space-y-2">
         {suggestions.map((s, index) => (
           <div
