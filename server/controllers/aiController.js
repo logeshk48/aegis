@@ -1,5 +1,9 @@
 const Task = require('../models/Task');
-const { parseTasksFromText, answerUserQuestion } = require('../services/aiService');
+const {
+  parseTasksFromText,
+  answerUserQuestion,
+  generateSuggestions,
+} = require('../services/aiService');
 
 // @desc   Parse text into tasks using AI, then save them
 // @route  POST /api/ai/parse
@@ -60,4 +64,18 @@ const askAboutMyData = async (req, res) => {
   }
 };
 
-module.exports = { parseAndCreateTasks, askAboutMyData };
+// @desc   Get personalized habit/task suggestions based on user data (RAG)
+// @route  GET /api/ai/suggestions
+// @access Protected
+const getSuggestions = async (req, res) => {
+  try {
+    const suggestions = await generateSuggestions(req.user._id);
+    res.status(200).json({ suggestions });
+  } catch (error) {
+    console.error('Suggestions error:', error.message);
+    // fail soft — suggestions are a bonus, not critical
+    res.status(200).json({ suggestions: [] });
+  }
+};
+
+module.exports = { parseAndCreateTasks, askAboutMyData, getSuggestions };
