@@ -12,6 +12,12 @@ export const askAegis = async (question) => {
   return res.data; // { question, answer }
 };
 
+// get personalized AI suggestions based on your data
+export const getSuggestions = async () => {
+  const res = await api.get('/ai/suggestions');
+  return res.data; // { suggestions: [...] }
+};
+
 // --- Diary ---
 
 // create a diary entry (auto-extracts tasks on the backend)
