@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import AskAegis from '../components/AskAegis';
+import Suggestions from '../components/Suggestions';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
@@ -62,6 +63,17 @@ function Home() {
     }
   };
 
+  // create a task or habit from an AI suggestion
+  const handleAcceptSuggestion = async (suggestion) => {
+    if (suggestion.type === 'habit') {
+      const res = await api.post('/habits', { name: suggestion.title });
+      setHabits((prev) => [res.data, ...prev]);
+    } else {
+      const res = await api.post('/tasks', { title: suggestion.title, priority: 'medium' });
+      setTasks((prev) => [res.data, ...prev]);
+    }
+  };
+
   const isHabitDoneToday = (habit) =>
     habit.completedDates?.includes(todayStr());
 
@@ -69,12 +81,10 @@ function Home() {
   const dueTodayTasks = tasks.filter(isDueToday);
   const pendingTasks = tasks.filter((t) => !t.completed);
 
-  // completed today (tasks marked done today)
   const completedToday = tasks.filter(
     (t) => t.completed && new Date(t.updatedAt).toISOString().split('T')[0] === todayStr()
   ).length;
 
-  // best current streak across habits
   const bestStreak = habits.reduce((max, h) => Math.max(max, h.streak || 0), 0);
 
   const greeting = (() => {
@@ -88,7 +98,6 @@ function Home() {
     return <p className="text-slate-400 text-sm max-w-3xl mx-auto">Loading your day...</p>;
   }
 
-  // a small reusable task row
   const TaskRow = ({ task }) => (
     <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-lg border border-slate-200">
       <input
@@ -128,6 +137,9 @@ function Home() {
           <div className="text-xs text-slate-500 mt-1">Best streak</div>
         </div>
       </div>
+
+      {/* AI Suggestions */}
+      <Suggestions onAccept={handleAcceptSuggestion} />
 
       {/* Overdue alert */}
       {overdueTasks.length > 0 && (
