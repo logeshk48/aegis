@@ -116,11 +116,14 @@ function Home() {
       <h1 className="text-3xl font-bold text-slate-900">
         {greeting}, {userName} 👋
       </h1>
-      <p className="text-slate-500 mt-1 mb-8">
+      <p className="text-slate-500 mt-1 mb-6">
         {pendingTasks.length === 0
           ? "You're all caught up. Nice. 🎉"
           : `You have ${pendingTasks.length} thing${pendingTasks.length > 1 ? 's' : ''} on your plate.`}
       </p>
+
+      {/* AI Suggestions — up top, impossible to miss */}
+      <Suggestions onAccept={handleAcceptSuggestion} />
 
       {/* Quick stats */}
       <div className="grid grid-cols-3 gap-3 mb-8">
@@ -137,9 +140,6 @@ function Home() {
           <div className="text-xs text-slate-500 mt-1">Best streak</div>
         </div>
       </div>
-
-      {/* AI Suggestions */}
-      <Suggestions onAccept={handleAcceptSuggestion} />
 
       {/* Overdue alert */}
       {overdueTasks.length > 0 && (
