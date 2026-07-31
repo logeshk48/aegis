@@ -27,7 +27,6 @@ function Suggestions({ onAccept }) {
     try {
       await onAccept(suggestion);
       setMessage(`✅ Added "${suggestion.title}" to your ${suggestion.type}s.`);
-      // remove it from the list once accepted
       setSuggestions((prev) => prev.filter((_, i) => i !== index));
     } catch (err) {
       console.error('Could not accept suggestion:', err);
@@ -56,81 +55,88 @@ function Suggestions({ onAccept }) {
 
   if (loading) {
     return (
-      <div className="mb-8">
-        <h2 className="text-sm font-semibold text-slate-700 mb-2">💡 Aegis noticed...</h2>
-        <div className="px-4 py-6 bg-white rounded-lg border border-slate-200 text-sm text-slate-400">
-          Looking at your patterns...
+      <div className="mb-8 rounded-2xl bg-slate-900 p-6">
+        <div className="flex items-center gap-2 text-indigo-300 text-sm font-medium">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-400"></span>
+          </span>
+          Aegis is reading your patterns...
         </div>
       </div>
     );
   }
 
-  // nothing left to suggest — show a confirmation + refresh option if they just acted
   if (suggestions.length === 0) {
     return message ? (
-      <div className="mb-8">
-        <p className="text-xs text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
-          {message}
-        </p>
+      <div className="mb-8 rounded-2xl bg-slate-900 p-5">
+        <p className="text-sm text-green-300">{message}</p>
         <button
           onClick={handleRefresh}
-          className="mt-2 text-xs text-indigo-600 hover:underline"
+          className="mt-2 text-xs text-indigo-300 hover:text-white transition"
         >
-          Get new suggestions
+          ↻ Look again
         </button>
       </div>
     ) : null;
   }
 
   return (
-    <div className="mb-8">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
-        💡 Aegis noticed...
-      </h2>
+    <div className="mb-8 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 p-6 shadow-xl shadow-indigo-900/20">
+      {/* header */}
+      <div className="flex items-center gap-2 mb-1">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-400"></span>
+        </span>
+        <span className="text-xs font-bold uppercase tracking-widest text-indigo-300">
+          Aegis noticed
+        </span>
+      </div>
+      <p className="text-white text-lg font-semibold mb-5">
+        {suggestions.length} idea{suggestions.length > 1 ? 's' : ''} based on your patterns
+      </p>
 
       {message && (
-        <p className="text-xs text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2 mb-2">
+        <p className="text-xs text-green-300 bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 mb-4">
           {message}
         </p>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {suggestions.map((s, index) => (
           <div
             key={`${s.title}-${index}`}
-            className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-4"
+            className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      s.type === 'habit'
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-blue-100 text-blue-700'
-                    }`}
-                  >
-                    {s.type}
-                  </span>
-                  <span className="font-semibold text-slate-900 text-sm">{s.title}</span>
-                </div>
-                <p className="text-xs text-slate-600 mt-1.5">{s.reason}</p>
-              </div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${
+                  s.type === 'habit'
+                    ? 'bg-orange-500/20 text-orange-300'
+                    : 'bg-sky-500/20 text-sky-300'
+                }`}
+              >
+                {s.type}
+              </span>
+              <span className="font-semibold text-white">{s.title}</span>
             </div>
 
-            <div className="flex items-center gap-2 mt-3">
+            <p className="text-sm text-slate-300 leading-relaxed mb-3">{s.reason}</p>
+
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => handleAccept(s, index)}
                 disabled={accepting === index}
-                className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 disabled:bg-indigo-400 transition"
+                className="px-4 py-2 rounded-lg bg-white text-slate-900 text-xs font-bold hover:bg-indigo-100 disabled:opacity-50 transition"
               >
-                {accepting === index ? 'Adding...' : `+ Add ${s.type}`}
+                {accepting === index ? 'Adding...' : `+ Add this ${s.type}`}
               </button>
               <button
                 onClick={() => handleDismiss(index)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:bg-slate-100 transition"
+                className="px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/10 transition"
               >
-                Dismiss
+                Not now
               </button>
             </div>
           </div>
