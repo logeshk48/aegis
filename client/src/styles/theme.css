@@ -1,0 +1,106 @@
+/* ===== AEGIS THEME =====
+   Palette:
+   #312C51  deep navy   — base background
+   #48426D  muted purple — raised surfaces
+   #F0C38E  warm sand   — primary accent
+   #F1AA9B  soft coral  — secondary accent
+*/
+
+:root {
+  --navy: #312c51;
+  --purple: #48426d;
+  --sand: #f0c38e;
+  --coral: #f1aa9b;
+
+  --text-primary: #f5f3f7;
+  --text-muted: #b0abc4;
+}
+
+@layer components {
+  /* ---- frosted glass surface ---- */
+  .glass {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(72, 66, 109, 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .glass-tile {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(72, 66, 109, 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+  }
+
+  .glass-tile:hover {
+    background: rgba(72, 66, 109, 0.5);
+    border-color: rgba(240, 195, 142, 0.3);
+  }
+
+  /* ---- typography helpers ---- */
+  .tile-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+  }
+
+  .heading-xl {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  /* ---- buttons ---- */
+  .btn-sand {
+    background: var(--sand);
+    color: var(--navy);
+    font-weight: 600;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1.25rem;
+    transition: all 0.2s ease;
+  }
+  .btn-sand:hover {
+    background: #f5d3a8;
+  }
+  .btn-sand:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .btn-ghost {
+    color: var(--text-muted);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
+  }
+  .btn-ghost:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* ---- inputs ---- */
+  .input-glass {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+  }
+  .input-glass::placeholder {
+    color: rgba(176, 171, 196, 0.6);
+  }
+  .input-glass:focus {
+    outline: none;
+    border-color: var(--sand);
+    background: rgba(255, 255, 255, 0.1);
+  }
+}

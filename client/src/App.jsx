@@ -15,7 +15,7 @@ function PillNav() {
   const location = useLocation();
 
   const isLoggedIn = !!localStorage.getItem('accessToken');
-  if (!isLoggedIn) return null; // no nav on login/signup
+  if (!isLoggedIn) return null;
 
   const handleLogout = async () => {
     await logout();
@@ -31,8 +31,16 @@ function PillNav() {
   ];
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <nav className="flex items-center gap-1 bg-slate-900 rounded-full px-2 py-2 shadow-xl shadow-slate-900/20">
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw]">
+      <nav
+        className="flex items-center gap-0.5 sm:gap-1 rounded-full px-1.5 py-1.5 sm:px-2 sm:py-2 shadow-2xl"
+        style={{
+          background: 'rgba(20, 17, 40, 0.85)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255,255,255,0.1)',
+        }}
+      >
         {navItems.map((item) => {
           const active = location.pathname === item.to;
           const Icon = item.icon;
@@ -40,27 +48,28 @@ function PillNav() {
             <Link
               key={item.to}
               to={item.to}
-              className={`flex items-center gap-2 rounded-full transition-all duration-300 ${
+              className="flex items-center gap-2 rounded-full transition-all duration-300 px-2.5 py-2 sm:px-3 sm:py-2.5"
+              style={
                 active
-                  ? 'bg-white text-slate-900 px-4 py-2.5'
-                  : 'text-slate-400 hover:text-white px-3 py-2.5'
-              }`}
+                  ? { background: 'var(--sand)', color: '#312c51', paddingLeft: '0.9rem', paddingRight: '0.9rem' }
+                  : { color: 'rgba(176,171,196,0.9)' }
+              }
             >
-              <Icon size={20} strokeWidth={2} />
-              {active && <span className="text-sm font-medium">{item.label}</span>}
+              <Icon size={19} strokeWidth={2} />
+              {active && <span className="text-sm font-semibold">{item.label}</span>}
             </Link>
           );
         })}
 
-        {/* divider */}
-        <div className="w-px h-6 bg-slate-700 mx-1"></div>
+        <div className="w-px h-5 mx-0.5" style={{ background: 'rgba(255,255,255,0.15)' }}></div>
 
         <button
           onClick={handleLogout}
-          className="flex items-center rounded-full text-slate-400 hover:text-red-400 px-3 py-2.5 transition"
+          className="flex items-center rounded-full px-2.5 py-2 sm:px-3 sm:py-2.5 transition"
+          style={{ color: 'rgba(176,171,196,0.9)' }}
           title="Logout"
         >
-          <LogOut size={20} strokeWidth={2} />
+          <LogOut size={19} strokeWidth={2} />
         </button>
       </nav>
     </div>
@@ -70,7 +79,24 @@ function PillNav() {
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-slate-50 pt-8 px-4 pb-28">
+      <div
+        className="min-h-screen pt-6 sm:pt-8 px-3 sm:px-4 pb-28 relative overflow-hidden"
+        style={{ background: '#312c51' }}
+      >
+        {/* ambient gradient blobs — what the glass blurs against */}
+        <div
+          className="pointer-events-none fixed -top-40 -left-40 w-96 h-96 rounded-full blur-3xl"
+          style={{ background: 'rgba(72,66,109,0.9)' }}
+        ></div>
+        <div
+          className="pointer-events-none fixed top-1/3 -right-40 w-96 h-96 rounded-full blur-3xl"
+          style={{ background: 'rgba(241,170,155,0.15)' }}
+        ></div>
+        <div
+          className="pointer-events-none fixed bottom-0 left-1/4 w-96 h-96 rounded-full blur-3xl"
+          style={{ background: 'rgba(240,195,142,0.12)' }}
+        ></div>
+
         <Routes>
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />

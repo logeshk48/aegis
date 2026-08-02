@@ -1,0 +1,93 @@
+/* ===== HOME PAGE ===== */
+
+@layer components {
+  /* the bento grid container */
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .bento-grid-stats {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .bento-grid-main {
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .bento-span-3 {
+      grid-column: span 3;
+    }
+    .bento-span-2 {
+      grid-column: span 2;
+    }
+  }
+
+  /* stat tile */
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  /* a row inside a tile (task or habit) */
+  .tile-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.65rem;
+    background: rgba(255, 255, 255, 0.04);
+    transition: background 0.2s ease;
+  }
+  .tile-row:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .tile-row-overdue {
+    background: rgba(241, 170, 155, 0.12);
+    border: 1px solid rgba(241, 170, 155, 0.25);
+  }
+
+  .tile-row-done {
+    background: rgba(240, 195, 142, 0.1);
+  }
+
+  /* empty state inside a tile */
+  .tile-empty {
+    text-align: center;
+    padding: 1.5rem 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  /* small check-in button */
+  .btn-checkin {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.5rem;
+    background: var(--sand);
+    color: var(--navy);
+    transition: all 0.2s ease;
+  }
+  .btn-checkin:hover {
+    background: #f5d3a8;
+  }
+  .btn-checkin:disabled {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    cursor: default;
+  }
+
+  /* streak pill */
+  .streak-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(240, 195, 142, 0.15);
+    color: var(--sand);
+  }
+}
