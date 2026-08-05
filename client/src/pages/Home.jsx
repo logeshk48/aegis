@@ -6,15 +6,11 @@ import '../styles/home.css';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
-const isOverdue = (task) => {
-  if (!task.dueDate || task.completed) return false;
-  return new Date(task.dueDate).toISOString().split('T')[0] < todayStr();
-};
+const isOverdue = (t) =>
+  t.dueDate && !t.completed && new Date(t.dueDate).toISOString().split('T')[0] < todayStr();
 
-const isDueToday = (task) => {
-  if (!task.dueDate || task.completed) return false;
-  return new Date(task.dueDate).toISOString().split('T')[0] === todayStr();
-};
+const isDueToday = (t) =>
+  t.dueDate && !t.completed && new Date(t.dueDate).toISOString().split('T')[0] === todayStr();
 
 function Home() {
   const userName = localStorage.getItem('userName') || 'there';
@@ -45,7 +41,7 @@ function Home() {
       const res = await api.patch(`/tasks/${id}/toggle`);
       setTasks(tasks.map((t) => (t._id === id ? res.data : t)));
     } catch (err) {
-      console.error('Could not toggle task:', err);
+      console.error(err);
     }
   };
 
@@ -54,21 +50,21 @@ function Home() {
       const res = await api.patch(`/habits/${id}/checkin`);
       setHabits(habits.map((h) => (h._id === id ? res.data : h)));
     } catch (err) {
-      console.error('Could not check in habit:', err);
+      console.error(err);
     }
   };
 
-  const handleAcceptSuggestion = async (suggestion) => {
-    if (suggestion.type === 'habit') {
-      const res = await api.post('/habits', { name: suggestion.title });
+  const handleAcceptSuggestion = async (s) => {
+    if (s.type === 'habit') {
+      const res = await api.post('/habits', { name: s.title });
       setHabits((prev) => [res.data, ...prev]);
     } else {
-      const res = await api.post('/tasks', { title: suggestion.title, priority: 'medium' });
+      const res = await api.post('/tasks', { title: s.title, priority: 'medium' });
       setTasks((prev) => [res.data, ...prev]);
     }
   };
 
-  const isHabitDoneToday = (habit) => habit.completedDates?.includes(todayStr());
+  const isHabitDoneToday = (h) => h.completedDates?.includes(todayStr());
 
   const overdueTasks = tasks.filter(isOverdue);
   const dueTodayTasks = tasks.filter(isDueToday);
@@ -87,101 +83,125 @@ function Home() {
     return 'Good evening';
   })();
 
+  const dateLine = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+
   if (loading) {
-    return <p className="text-slate-400 text-sm max-w-4xl mx-auto">Loading your day...</p>;
+    return <p className="body-sm max-w-4xl mx-auto">Loading your day…</p>;
   }
 
   return (
     <div className="max-w-4xl mx-auto relative z-10">
-      {/* Greeting */}
-      <h1 className="heading-xl">
-        {greeting}, {userName} 👋
-      </h1>
-      <p className="text-slate-400 mt-1 mb-6">
-        {pendingTasks.length === 0
-          ? "You're all caught up. Nice. 🎉"
-          : `You have ${pendingTasks.length} thing${pendingTasks.length > 1 ? 's' : ''} on your plate.`}
-      </p>
+      {/* Header */}
+      <div className="animate-rise mb-8">
+        <p className="eyebrow mb-2">{dateLine}</p>
+        <h1 className="display-lg">
+          {greeting}, <span className="text-shimmer">{userName}</span>
+        </h1>
+        <p className="body-text mt-2">
+          {pendingTasks.length === 0
+            ? 'Everything is handled. Enjoy the stillness.'
+            : `${pendingTasks.length} item${pendingTasks.length > 1 ? 's' : ''} await your attention.`}
+        </p>
+      </div>
 
-      {/* AI Suggestions */}
-      <Suggestions onAccept={handleAcceptSuggestion} />
+      {/* Suggestions */}
+      <div className="animate-rise delay-1">
+        <Suggestions onAccept={handleAcceptSuggestion} />
+      </div>
 
-      {/* Stats row */}
-      <div className="bento-grid bento-grid-stats">
-        <div className="glass-tile text-center">
-          <div className="stat-value" style={{ color: 'var(--sand)' }}>{pendingTasks.length}</div>
-          <div className="tile-label mt-2">Pending</div>
+      {/* Stats */}
+      <div className="bento bento-stats animate-rise delay-2">
+        <div className="surface-tile surface-tile-accent text-center">
+          <div className="numeral">{pendingTasks.length}</div>
+          <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Pending</div>
         </div>
-        <div className="glass-tile text-center">
-          <div className="stat-value" style={{ color: 'var(--coral)' }}>{completedToday}</div>
-          <div className="tile-label mt-2">Done today</div>
+        <div className="surface-tile surface-tile-accent text-center">
+          <div className="numeral">{completedToday}</div>
+          <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Completed</div>
         </div>
-        <div className="glass-tile text-center">
-          <div className="stat-value" style={{ color: 'var(--sand)' }}>🔥 {bestStreak}</div>
-          <div className="tile-label mt-2">Best streak</div>
+        <div className="surface-tile surface-tile-accent text-center">
+          <div className="numeral">{bestStreak}</div>
+          <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Best streak</div>
         </div>
       </div>
 
-      {/* Main bento row: tasks (wide) + habits (narrow) */}
-      <div className="bento-grid bento-grid-main">
-        {/* Tasks tile */}
-        <div className="glass-tile bento-span-3">
-          <div className="tile-label mb-3">📅 Today</div>
+      {/* Main bento */}
+      <div className="bento bento-main animate-rise delay-3">
+        {/* Today */}
+        <div className="surface-tile span-3">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="display-md">Today</h2>
+            {overdueTasks.length > 0 && (
+              <span className="eyebrow" style={{ color: 'var(--rose)' }}>
+                {overdueTasks.length} overdue
+              </span>
+            )}
+          </div>
 
           {overdueTasks.length === 0 && dueTodayTasks.length === 0 ? (
-            <div className="tile-empty">Nothing due today. Enjoy it. 🌤️</div>
+            <div className="lux-empty">Nothing scheduled for today.</div>
           ) : (
             <div className="space-y-2">
               {overdueTasks.map((task) => (
-                <div key={task._id} className="tile-row tile-row-overdue">
+                <div key={task._id} className="lux-row lux-row-alert">
                   <input
                     type="checkbox"
                     checked={task.completed}
                     onChange={() => handleToggle(task._id)}
-                    className="w-4 h-4 rounded cursor-pointer accent-orange-400"
+                    className="lux-check"
                   />
-                  <span className="flex-1 text-sm text-slate-100">{task.title}</span>
-                  <span className="text-[11px] font-semibold" style={{ color: 'var(--coral)' }}>
-                    overdue
+                  <span className="flex-1 text-sm" style={{ color: 'var(--text-display)' }}>
+                    {task.title}
                   </span>
+                  <span className="eyebrow" style={{ color: 'var(--rose)' }}>Overdue</span>
                 </div>
               ))}
-
               {dueTodayTasks.map((task) => (
-                <div key={task._id} className="tile-row">
+                <div key={task._id} className="lux-row">
                   <input
                     type="checkbox"
                     checked={task.completed}
                     onChange={() => handleToggle(task._id)}
-                    className="w-4 h-4 rounded cursor-pointer accent-amber-300"
+                    className="lux-check"
                   />
-                  <span className="flex-1 text-sm text-slate-100">{task.title}</span>
+                  <span className="flex-1 text-sm" style={{ color: 'var(--text-display)' }}>
+                    {task.title}
+                  </span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Habits tile */}
-        <div className="glass-tile bento-span-2">
-          <div className="tile-label mb-3">🔥 Habits</div>
+        {/* Habits */}
+        <div className="surface-tile span-2">
+          <h2 className="display-md mb-4">Rituals</h2>
 
           {habits.length === 0 ? (
-            <div className="tile-empty">No habits yet.</div>
+            <div className="lux-empty">No rituals yet.</div>
           ) : (
             <div className="space-y-2">
               {habits.map((habit) => {
                 const done = isHabitDoneToday(habit);
                 return (
-                  <div key={habit._id} className={`tile-row ${done ? 'tile-row-done' : ''}`}>
-                    <span className="flex-1 text-sm text-slate-100 truncate">{habit.name}</span>
-                    <span className="streak-pill">🔥 {habit.streak}</span>
+                  <div key={habit._id} className={`lux-row ${done ? 'lux-row-done' : ''}`}>
+                    <span
+                      className="flex-1 text-sm truncate"
+                      style={{ color: 'var(--text-display)' }}
+                    >
+                      {habit.name}
+                    </span>
+                    <span className="chip-streak">{habit.streak}d</span>
                     <button
                       onClick={() => handleCheckIn(habit._id)}
                       disabled={done}
-                      className="btn-checkin"
+                      className="btn-mini"
                     >
-                      {done ? '✓' : 'Do'}
+                      {done ? '✓' : 'Mark'}
                     </button>
                   </div>
                 );
@@ -192,7 +212,7 @@ function Home() {
       </div>
 
       {/* Ask Aegis */}
-      <div className="mb-8">
+      <div className="animate-rise delay-4 mb-8">
         <AskAegis />
       </div>
     </div>

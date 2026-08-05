@@ -31,14 +31,15 @@ function PillNav() {
   ];
 
   return (
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw]">
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[95vw]">
       <nav
-        className="flex items-center gap-0.5 sm:gap-1 rounded-full px-1.5 py-1.5 sm:px-2 sm:py-2 shadow-2xl"
+        className="flex items-center gap-0.5 sm:gap-1 rounded-full px-1.5 py-1.5 sm:px-2 sm:py-2"
         style={{
-          background: 'rgba(20, 17, 40, 0.85)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          background: 'rgba(20, 16, 31, 0.85)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
         }}
       >
         {navItems.map((item) => {
@@ -48,12 +49,18 @@ function PillNav() {
             <Link
               key={item.to}
               to={item.to}
-              className="flex items-center gap-2 rounded-full transition-all duration-300 px-2.5 py-2 sm:px-3 sm:py-2.5"
-              style={
-                active
-                  ? { background: 'var(--sand)', color: '#312c51', paddingLeft: '0.9rem', paddingRight: '0.9rem' }
-                  : { color: 'rgba(176,171,196,0.9)' }
-              }
+              className="flex items-center gap-2 rounded-full px-2.5 py-2 sm:px-3 sm:py-2.5"
+              style={{
+                transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                ...(active
+                  ? {
+                      background: 'var(--gradient-gold)',
+                      color: '#14101f',
+                      paddingLeft: '1rem',
+                      paddingRight: '1rem',
+                    }
+                  : { color: 'var(--text-muted)' }),
+              }}
             >
               <Icon size={19} strokeWidth={2} />
               {active && <span className="text-sm font-semibold">{item.label}</span>}
@@ -61,12 +68,12 @@ function PillNav() {
           );
         })}
 
-        <div className="w-px h-5 mx-0.5" style={{ background: 'rgba(255,255,255,0.15)' }}></div>
+        <div className="w-px h-5 mx-0.5" style={{ background: 'var(--border-subtle)' }}></div>
 
         <button
           onClick={handleLogout}
-          className="flex items-center rounded-full px-2.5 py-2 sm:px-3 sm:py-2.5 transition"
-          style={{ color: 'rgba(176,171,196,0.9)' }}
+          className="flex items-center rounded-full px-2.5 py-2 sm:px-3 sm:py-2.5"
+          style={{ color: 'var(--text-muted)', transition: 'color 0.3s' }}
           title="Logout"
         >
           <LogOut size={19} strokeWidth={2} />
@@ -80,21 +87,17 @@ function App() {
   return (
     <BrowserRouter>
       <div
-        className="min-h-screen pt-6 sm:pt-8 px-3 sm:px-4 pb-28 relative overflow-hidden"
-        style={{ background: '#312c51' }}
+        className="min-h-screen pt-8 sm:pt-12 px-4 pb-28 relative overflow-hidden"
+        style={{ background: 'var(--bg-base)' }}
       >
-        {/* ambient gradient blobs — what the glass blurs against */}
+        {/* ambient light */}
         <div
-          className="pointer-events-none fixed -top-40 -left-40 w-96 h-96 rounded-full blur-3xl"
-          style={{ background: 'rgba(72,66,109,0.9)' }}
+          className="pointer-events-none fixed -top-52 left-1/4 w-[500px] h-[500px] rounded-full blur-3xl"
+          style={{ background: 'rgba(107, 77, 143, 0.25)' }}
         ></div>
         <div
-          className="pointer-events-none fixed top-1/3 -right-40 w-96 h-96 rounded-full blur-3xl"
-          style={{ background: 'rgba(241,170,155,0.15)' }}
-        ></div>
-        <div
-          className="pointer-events-none fixed bottom-0 left-1/4 w-96 h-96 rounded-full blur-3xl"
-          style={{ background: 'rgba(240,195,142,0.12)' }}
+          className="pointer-events-none fixed bottom-0 -right-40 w-[450px] h-[450px] rounded-full blur-3xl"
+          style={{ background: 'rgba(212, 175, 122, 0.07)' }}
         ></div>
 
         <Routes>

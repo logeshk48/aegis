@@ -1,106 +1,181 @@
-/* ===== AEGIS THEME =====
-   Palette:
-   #312C51  deep navy   — base background
-   #48426D  muted purple — raised surfaces
-   #F0C38E  warm sand   — primary accent
-   #F1AA9B  soft coral  — secondary accent
-*/
+/* ===== AEGIS · PREMIUM THEME ===== */
 
 :root {
-  --navy: #312c51;
-  --purple: #48426d;
-  --sand: #f0c38e;
-  --coral: #f1aa9b;
+  --bg-base: #14101f;
+  --bg-raised: #1e1830;
+  --bg-elevated: #292040;
 
-  --text-primary: #f5f3f7;
-  --text-muted: #b0abc4;
+  --gold: #d4af7a;
+  --gold-bright: #e8c99b;
+  --plum: #6b4d8f;
+  --rose: #c98b8b;
+
+  --text-display: #f7f4f0;
+  --text-body: #c9c2d4;
+  --text-muted: #8a819e;
+  --text-faint: #5d5570;
+
+  --border-subtle: rgba(212, 175, 122, 0.12);
+  --border-hover: rgba(212, 175, 122, 0.3);
+
+  --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 12px 40px rgba(0, 0, 0, 0.55);
+  --gradient-gold: linear-gradient(135deg, #d4af7a 0%, #e8c99b 50%, #c9a068 100%);
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-body);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 @layer components {
-  /* ---- frosted glass surface ---- */
-  .glass {
-    border-radius: 1.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(72, 66, 109, 0.35);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+  /* ---------- TYPOGRAPHY ---------- */
+  .display-lg {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.9rem, 5vw, 2.6rem);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--text-display);
   }
 
-  .glass-tile {
-    border-radius: 1.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(72, 66, 109, 0.35);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    padding: 1.25rem;
-    transition: all 0.3s ease;
+  .display-md {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text-display);
   }
 
-  .glass-tile:hover {
-    background: rgba(72, 66, 109, 0.5);
-    border-color: rgba(240, 195, 142, 0.3);
-  }
-
-  /* ---- typography helpers ---- */
-  .tile-label {
-    font-size: 11px;
+  .eyebrow {
+    font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
+    letter-spacing: 0.18em;
+    color: var(--gold);
   }
 
-  .heading-xl {
-    font-size: 1.875rem;
-    font-weight: 700;
-    color: var(--text-primary);
-  }
+  .body-text { font-size: 0.9rem; color: var(--text-body); line-height: 1.6; }
+  .body-sm { font-size: 0.8rem; color: var(--text-muted); }
 
-  /* ---- buttons ---- */
-  .btn-sand {
-    background: var(--sand);
-    color: var(--navy);
+  .numeral {
+    font-family: 'Fraunces', serif;
+    font-size: 2rem;
     font-weight: 600;
-    border-radius: 0.75rem;
-    padding: 0.5rem 1.25rem;
-    transition: all 0.2s ease;
+    line-height: 1;
+    color: var(--gold);
   }
-  .btn-sand:hover {
-    background: #f5d3a8;
+
+  /* ---------- SURFACES ---------- */
+  .surface {
+    background: linear-gradient(160deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    border: 1px solid var(--border-subtle);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow-soft);
   }
-  .btn-sand:disabled {
+
+  .surface-tile {
+    background: linear-gradient(160deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    border: 1px solid var(--border-subtle);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow-soft);
+    padding: 1.4rem;
+    transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease), border-color 0.5s var(--ease);
+  }
+  .surface-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lift);
+    border-color: var(--border-hover);
+  }
+
+  .surface-tile-accent { position: relative; overflow: hidden; }
+  .surface-tile-accent::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
     opacity: 0.5;
-    cursor: default;
   }
 
-  .btn-ghost {
-    color: var(--text-muted);
-    border-radius: 0.75rem;
-    padding: 0.5rem 1rem;
-    transition: all 0.2s ease;
+  /* ---------- BUTTONS ---------- */
+  .btn-gold {
+    background: var(--gradient-gold);
+    color: #14101f;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-radius: 0.85rem;
+    padding: 0.7rem 1.5rem;
+    box-shadow: 0 4px 16px rgba(212, 175, 122, 0.2);
+    transition: all 0.4s var(--ease);
   }
-  .btn-ghost:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.08);
+  .btn-gold:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(212, 175, 122, 0.35);
+  }
+  .btn-gold:active { transform: translateY(0); }
+  .btn-gold:disabled { opacity: 0.45; transform: none; cursor: default; }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-body);
+    font-weight: 500;
+    font-size: 0.85rem;
+    border-radius: 0.85rem;
+    padding: 0.7rem 1.4rem;
+    transition: all 0.4s var(--ease);
+  }
+  .btn-outline:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(212, 175, 122, 0.06);
   }
 
-  /* ---- inputs ---- */
-  .input-glass {
+  /* ---------- INPUTS ---------- */
+  .input-lux {
     width: 100%;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 0.75rem;
-    padding: 0.6rem 0.9rem;
-    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.85rem;
+    padding: 0.8rem 1rem;
+    color: var(--text-display);
     font-size: 0.9rem;
-    transition: all 0.2s ease;
+    transition: all 0.4s var(--ease);
   }
-  .input-glass::placeholder {
-    color: rgba(176, 171, 196, 0.6);
-  }
-  .input-glass:focus {
+  .input-lux::placeholder { color: var(--text-faint); }
+  .input-lux:focus {
     outline: none;
-    border-color: var(--sand);
-    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--gold);
+    background: rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 0 3px rgba(212, 175, 122, 0.1);
+  }
+
+  /* ---------- ANIMATIONS ---------- */
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-rise { animation: rise 0.7s var(--ease) both; }
+  .delay-1 { animation-delay: 0.08s; }
+  .delay-2 { animation-delay: 0.16s; }
+  .delay-3 { animation-delay: 0.24s; }
+  .delay-4 { animation-delay: 0.32s; }
+
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .text-shimmer {
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-bright) 50%, var(--gold) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 4s linear infinite;
   }
 }

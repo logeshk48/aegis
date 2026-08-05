@@ -1,93 +1,94 @@
-/* ===== HOME PAGE ===== */
+/* ===== HOME ===== */
 
 @layer components {
-  /* the bento grid container */
-  .bento-grid {
+  .bento {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
     gap: 1rem;
     margin-bottom: 1rem;
   }
 
+  .bento-stats { grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+
   @media (min-width: 768px) {
-    .bento-grid-stats {
-      grid-template-columns: repeat(3, 1fr);
-    }
-    .bento-grid-main {
-      grid-template-columns: repeat(5, 1fr);
-    }
-    .bento-span-3 {
-      grid-column: span 3;
-    }
-    .bento-span-2 {
-      grid-column: span 2;
-    }
+    .bento-main { grid-template-columns: repeat(5, 1fr); }
+    .span-3 { grid-column: span 3; }
+    .span-2 { grid-column: span 2; }
   }
 
-  /* stat tile */
-  .stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  /* a row inside a tile (task or habit) */
-  .tile-row {
+  /* a row inside a tile */
+  .lux-row {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.6rem 0.75rem;
-    border-radius: 0.65rem;
-    background: rgba(255, 255, 255, 0.04);
-    transition: background 0.2s ease;
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid transparent;
+    transition: all 0.4s var(--ease);
   }
-  .tile-row:hover {
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .tile-row-overdue {
-    background: rgba(241, 170, 155, 0.12);
-    border: 1px solid rgba(241, 170, 155, 0.25);
+  .lux-row:hover {
+    background: rgba(0, 0, 0, 0.32);
+    border-color: var(--border-subtle);
   }
 
-  .tile-row-done {
-    background: rgba(240, 195, 142, 0.1);
+  .lux-row-alert {
+    background: rgba(201, 139, 139, 0.1);
+    border-color: rgba(201, 139, 139, 0.22);
   }
 
-  /* empty state inside a tile */
-  .tile-empty {
+  .lux-row-done { background: rgba(212, 175, 122, 0.08); }
+
+  .lux-empty {
     text-align: center;
-    padding: 1.5rem 0;
-    font-size: 0.85rem;
-    color: var(--text-muted);
+    padding: 2rem 0;
+    font-size: 0.82rem;
+    color: var(--text-faint);
+    font-style: italic;
   }
 
-  /* small check-in button */
-  .btn-checkin {
+  /* streak chip */
+  .chip-streak {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(212, 175, 122, 0.12);
+    color: var(--gold);
+    border: 1px solid rgba(212, 175, 122, 0.2);
+    white-space: nowrap;
+  }
+
+  /* tiny action button */
+  .btn-mini {
     font-size: 0.7rem;
     font-weight: 600;
-    padding: 0.35rem 0.7rem;
-    border-radius: 0.5rem;
-    background: var(--sand);
-    color: var(--navy);
-    transition: all 0.2s ease;
+    padding: 0.35rem 0.8rem;
+    border-radius: 0.6rem;
+    background: var(--gradient-gold);
+    color: #14101f;
+    transition: all 0.3s var(--ease);
   }
-  .btn-checkin:hover {
-    background: #f5d3a8;
-  }
-  .btn-checkin:disabled {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-muted);
+  .btn-mini:hover { transform: translateY(-1px); }
+  .btn-mini:disabled {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-faint);
+    transform: none;
     cursor: default;
   }
 
-  /* streak pill */
-  .streak-pill {
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 0.15rem 0.5rem;
-    border-radius: 999px;
-    background: rgba(240, 195, 142, 0.15);
-    color: var(--sand);
+  /* custom checkbox */
+  .lux-check {
+    width: 1.05rem;
+    height: 1.05rem;
+    border-radius: 0.35rem;
+    accent-color: var(--gold);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 767px) {
+    .bento-stats .surface-tile { padding: 0.9rem 0.5rem; }
+    .numeral { font-size: 1.5rem; }
   }
 }
