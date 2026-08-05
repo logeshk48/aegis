@@ -26,11 +26,11 @@ function Suggestions({ onAccept }) {
     setAccepting(index);
     try {
       await onAccept(suggestion);
-      setMessage(`✅ Added "${suggestion.title}" to your ${suggestion.type}s.`);
+      setMessage(`Added "${suggestion.title}".`);
       setSuggestions((prev) => prev.filter((_, i) => i !== index));
     } catch (err) {
-      console.error('Could not accept suggestion:', err);
-      setMessage('Could not add that. Try again.');
+      console.error(err);
+      setMessage('Could not add that.');
     } finally {
       setAccepting(null);
     }
@@ -47,7 +47,7 @@ function Suggestions({ onAccept }) {
       const data = await getSuggestions();
       setSuggestions(data.suggestions || []);
     } catch (err) {
-      console.error('Could not refresh suggestions:', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -55,13 +55,10 @@ function Suggestions({ onAccept }) {
 
   if (loading) {
     return (
-      <div className="mb-8 rounded-2xl bg-slate-900 p-6">
-        <div className="flex items-center gap-2 text-indigo-300 text-sm font-medium">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-400"></span>
-          </span>
-          Aegis is reading your patterns...
+      <div className="mb-6">
+        <p className="eyebrow mb-3">Aegis is observing…</p>
+        <div className="surface-tile">
+          <p className="body-sm italic">Reading your patterns.</p>
         </div>
       </div>
     );
@@ -69,75 +66,65 @@ function Suggestions({ onAccept }) {
 
   if (suggestions.length === 0) {
     return message ? (
-      <div className="mb-8 rounded-2xl bg-slate-900 p-5">
-        <p className="text-sm text-green-300">{message}</p>
-        <button
-          onClick={handleRefresh}
-          className="mt-2 text-xs text-indigo-300 hover:text-white transition"
-        >
-          ↻ Look again
+      <div className="mb-6 flex items-center gap-3">
+        <p className="body-sm" style={{ color: 'var(--gold)' }}>{message}</p>
+        <button onClick={handleRefresh} className="body-sm hover:underline" style={{ color: 'var(--text-muted)' }}>
+          Look again
         </button>
       </div>
     ) : null;
   }
 
   return (
-    <div className="mb-8 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 p-6 shadow-xl shadow-indigo-900/20">
+    <div className="mb-6">
       {/* header */}
-      <div className="flex items-center gap-2 mb-1">
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-400"></span>
-        </span>
-        <span className="text-xs font-bold uppercase tracking-widest text-indigo-300">
-          Aegis noticed
-        </span>
+      <div className="flex items-baseline justify-between mb-3">
+        <p className="eyebrow">Aegis noticed</p>
+        <p className="body-sm" style={{ color: 'var(--text-faint)' }}>
+          swipe →
+        </p>
       </div>
-      <p className="text-white text-lg font-semibold mb-5">
-        {suggestions.length} idea{suggestions.length > 1 ? 's' : ''} based on your patterns
-      </p>
 
       {message && (
-        <p className="text-xs text-green-300 bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2 mb-4">
-          {message}
-        </p>
+        <p className="body-sm mb-3" style={{ color: 'var(--gold)' }}>{message}</p>
       )}
 
-      <div className="space-y-3">
+      {/* swipe rail */}
+      <div className="swipe-rail">
         {suggestions.map((s, index) => (
-          <div
-            key={`${s.title}-${index}`}
-            className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition"
-          >
-            <div className="flex items-center gap-2 mb-1.5">
+          <div key={`${s.title}-${index}`} className="swipe-card">
+            <div className="surface-tile surface-tile-accent h-full flex flex-col">
               <span
-                className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${
-                  s.type === 'habit'
-                    ? 'bg-orange-500/20 text-orange-300'
-                    : 'bg-sky-500/20 text-sky-300'
-                }`}
+                className="eyebrow mb-2"
+                style={{ color: s.type === 'habit' ? 'var(--gold)' : 'var(--rose)' }}
               >
                 {s.type}
               </span>
-              <span className="font-semibold text-white">{s.title}</span>
-            </div>
 
-            <p className="text-sm text-slate-300 leading-relaxed mb-3">{s.reason}</p>
+              <h3 className="display-md mb-2" style={{ fontSize: '1.05rem' }}>
+                {s.title}
+              </h3>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleAccept(s, index)}
-                disabled={accepting === index}
-                className="px-4 py-2 rounded-lg bg-white text-slate-900 text-xs font-bold hover:bg-indigo-100 disabled:opacity-50 transition"
-              >
-                {accepting === index ? 'Adding...' : `+ Add this ${s.type}`}
-              </button>
-              <button
-                onClick={() => handleDismiss(index)}
-                className="px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/10 transition"
-              >
-                Not now
-              </button>
+              <p className="body-sm flex-1 mb-4" style={{ lineHeight: 1.55 }}>
+                {s.reason}
+              </p>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleAccept(s, index)}
+                  disabled={accepting === index}
+                  className="btn-mini"
+                >
+                  {accepting === index ? 'Adding…' : 'Add'}
+                </button>
+                <button
+                  onClick={() => handleDismiss(index)}
+                  className="body-sm px-2 py-1 rounded-lg transition"
+                  style={{ color: 'var(--text-faint)' }}
+                >
+                  Not now
+                </button>
+              </div>
             </div>
           </div>
         ))}
