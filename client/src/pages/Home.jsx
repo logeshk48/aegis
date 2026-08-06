@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import AskAegis from '../components/AskAegis';
 import Suggestions from '../components/Suggestions';
+import ProgressRing from '../components/ProgressRing';
 import '../styles/home.css';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
@@ -113,19 +114,24 @@ function Home() {
         <Suggestions onAccept={handleAcceptSuggestion} />
       </div>
 
-      {/* Stats */}
-      <div className="bento bento-stats animate-rise delay-2">
-        <div className="surface-tile surface-tile-accent text-center">
-          <div className="numeral">{pendingTasks.length}</div>
-          <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Pending</div>
+      {/* Progress ring + supporting stats */}
+      <div className="bento bento-main animate-rise delay-2">
+        <div className="surface-tile surface-tile-accent span-2 flex flex-col items-center justify-center">
+          <ProgressRing completed={completedToday} total={completedToday + pendingTasks.length} />
+          <p className="eyebrow mt-3" style={{ color: 'var(--text-muted)' }}>
+            Today's progress
+          </p>
         </div>
-        <div className="surface-tile surface-tile-accent text-center">
-          <div className="numeral">{completedToday}</div>
-          <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Completed</div>
-        </div>
-        <div className="surface-tile surface-tile-accent text-center">
-          <div className="numeral">{bestStreak}</div>
-          <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Best streak</div>
+
+        <div className="span-3 grid grid-cols-2 gap-4">
+          <div className="surface-tile text-center flex flex-col justify-center">
+            <div className="numeral">{pendingTasks.length}</div>
+            <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Remaining</div>
+          </div>
+          <div className="surface-tile text-center flex flex-col justify-center">
+            <div className="numeral">{bestStreak}</div>
+            <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Best streak</div>
+          </div>
         </div>
       </div>
 
