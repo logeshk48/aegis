@@ -3,6 +3,7 @@ import api from '../api/axios';
 import AskAegis from '../components/AskAegis';
 import Suggestions from '../components/Suggestions';
 import ProgressRing from '../components/ProgressRing';
+import { buildSummary } from '../utils/summary';
 import '../styles/home.css';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
@@ -103,9 +104,15 @@ function Home() {
           {greeting}, <span className="text-shimmer">{userName}</span>
         </h1>
         <p className="body-text mt-2">
-          {pendingTasks.length === 0
-            ? 'Everything is handled. Enjoy the stillness.'
-            : `${pendingTasks.length} item${pendingTasks.length > 1 ? 's' : ''} await your attention.`}
+          {buildSummary({
+            pendingCount: pendingTasks.length,
+            overdueCount: overdueTasks.length,
+            completedToday,
+            bestStreak,
+            habitsDoneToday: habits.filter(isHabitDoneToday).length,
+            habitsTotal: habits.length,
+            hour: new Date().getHours(),
+          })}
         </p>
       </div>
 
