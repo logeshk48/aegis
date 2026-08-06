@@ -139,6 +139,50 @@
     margin-top: 2px;
   }
 
+  /* ---- completion micro-interaction ---- */
+  @keyframes goldPulse {
+    0% {
+      background: rgba(212, 175, 122, 0.28);
+      border-color: rgba(212, 175, 122, 0.5);
+      transform: scale(1);
+    }
+    40% {
+      background: rgba(212, 175, 122, 0.18);
+      transform: scale(1.015);
+    }
+    100% {
+      background: rgba(212, 175, 122, 0.28);
+      transform: scale(1);
+    }
+  }
+
+  @keyframes collapseOut {
+    0% { opacity: 1; max-height: 60px; margin-bottom: 0.5rem; }
+    100% { opacity: 0; max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
+  }
+
+  .row-completing {
+    animation: goldPulse 0.45s var(--ease) forwards;
+    pointer-events: none;
+  }
+
+  .row-leaving {
+    animation: collapseOut 0.45s var(--ease) 0.4s forwards;
+    overflow: hidden;
+  }
+
+  @keyframes checkBurst {
+    0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+    50% { transform: scale(1.25) rotate(5deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+
+  .check-burst {
+    animation: checkBurst 0.5s var(--ease) both;
+    color: var(--gold);
+    font-size: 1rem;
+  }
+
   /* ---- horizontal swipe rail (suggestions) ---- */
   .swipe-rail {
     display: flex;

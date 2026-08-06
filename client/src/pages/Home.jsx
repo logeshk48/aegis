@@ -19,6 +19,7 @@ function Home() {
   const [tasks, setTasks] = useState([]);
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [completingId, setCompletingId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,11 +40,29 @@ function Home() {
   }, []);
 
   const handleToggle = async (id) => {
-    try {
-      const res = await api.patch(`/tasks/${id}/toggle`);
-      setTasks(tasks.map((t) => (t._id === id ? res.data : t)));
-    } catch (err) {
-      console.error(err);
+    const task = tasks.find((t) => t._id === id);
+    const isCompleting = task && !task.completed;
+
+    if (isCompleting) {
+      // play the celebration, then update
+      setCompletingId(id);
+      setTimeout(async () => {
+        try {
+          const res = await api.patch(`/tasks/${id}/toggle`);
+          setTasks((prev) => prev.map((t) => (t._id === id ? res.data : t)));
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setCompletingId(null);
+        }
+      }, 850);
+    } else {
+      try {
+        const res = await api.patch(`/tasks/${id}/toggle`);
+        setTasks((prev) => prev.map((t) => (t._id === id ? res.data : t)));
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -160,27 +179,48 @@ function Home() {
           ) : (
             <div className="space-y-2">
               {overdueTasks.map((task) => (
-                <div key={task._id} className="lux-row lux-row-alert">
-                  <input
-                    type="checkbox"
-                    checked={task.completed}
-                    onChange={() => handleToggle(task._id)}
-                    className="lux-check"
-                  />
+                <div
+                  key={task._id}
+                  className={`lux-row lux-row-alert ${
+                    completingId === task._id ? 'row-completing row-leaving' : ''
+                  }`}
+                >
+                  {completingId === task._id ? (
+                    <span className="check-burst">✓</span>
+                  ) : (
+                    <input
+                      type="checkbox"
+                      checked={task.completed}
+                      onChange={() => handleToggle(task._id)}
+                      className="lux-check"
+                    />
+                  )}
                   <span className="flex-1 text-sm" style={{ color: 'var(--text-display)' }}>
                     {task.title}
                   </span>
-                  <span className="eyebrow" style={{ color: 'var(--rose)' }}>Overdue</span>
+                  {completingId !== task._id && (
+                    <span className="eyebrow" style={{ color: 'var(--rose)' }}>Overdue</span>
+                  )}
                 </div>
               ))}
+
               {dueTodayTasks.map((task) => (
-                <div key={task._id} className="lux-row">
-                  <input
-                    type="checkbox"
-                    checked={task.completed}
-                    onChange={() => handleToggle(task._id)}
-                    className="lux-check"
-                  />
+                <div
+                  key={task._id}
+                  className={`lux-row ${
+                    completingId === task._id ? 'row-completing row-leaving' : ''
+                  }`}
+                >
+                  {completingId === task._id ? (
+                    <span className="check-burst">✓</span>
+                  ) : (
+                    <input
+                      type="checkbox"
+                      checked={task.completed}
+                      onChange={() => handleToggle(task._id)}
+                      className="lux-check"
+                    />
+                  )}
                   <span className="flex-1 text-sm" style={{ color: 'var(--text-display)' }}>
                     {task.title}
                   </span>
