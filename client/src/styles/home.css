@@ -59,6 +59,13 @@
     white-space: nowrap;
   }
 
+  @keyframes chipPop {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.22); background: rgba(212, 175, 122, 0.3); }
+    100% { transform: scale(1); }
+  }
+  .chip-pop { animation: chipPop 0.45s var(--ease); }
+
   /* tiny action button */
   .btn-mini {
     font-size: 0.7rem;
