@@ -39,12 +39,13 @@ function Home() {
     fetchData();
   }, []);
 
+  const isHabitDoneToday = (h) => h.completedDates?.includes(todayStr());
+
   const handleToggle = async (id) => {
     const task = tasks.find((t) => t._id === id);
     const isCompleting = task && !task.completed;
 
     if (isCompleting) {
-      // play the celebration, then update
       setCompletingId(id);
       setTimeout(async () => {
         try {
@@ -67,11 +68,25 @@ function Home() {
   };
 
   const handleCheckIn = async (id) => {
+    const habit = habits.find((h) => h._id === id);
+    if (!habit || isHabitDoneToday(habit)) return;
+
+    // 1. OPTIMISTIC: update the UI immediately
+    const optimistic = {
+      ...habit,
+      streak: (habit.streak || 0) + 1,
+      completedDates: [...(habit.completedDates || []), todayStr()],
+    };
+    setHabits((prev) => prev.map((h) => (h._id === id ? optimistic : h)));
+
+    // 2. confirm with the server
     try {
       const res = await api.patch(`/habits/${id}/checkin`);
-      setHabits(habits.map((h) => (h._id === id ? res.data : h)));
+      setHabits((prev) => prev.map((h) => (h._id === id ? res.data : h)));
     } catch (err) {
-      console.error(err);
+      // 3. ROLLBACK if it failed
+      console.error('Check-in failed, reverting:', err);
+      setHabits((prev) => prev.map((h) => (h._id === id ? habit : h)));
     }
   };
 
@@ -84,8 +99,6 @@ function Home() {
       setTasks((prev) => [res.data, ...prev]);
     }
   };
-
-  const isHabitDoneToday = (h) => h.completedDates?.includes(todayStr());
 
   const overdueTasks = tasks.filter(isOverdue);
   const dueTodayTasks = tasks.filter(isDueToday);
@@ -248,7 +261,9 @@ function Home() {
                     >
                       {habit.name}
                     </span>
-                    <span className="chip-streak">{habit.streak}d</span>
+                    <span className={`chip-streak ${done ? 'chip-pop' : ''}`}>
+                      {habit.streak}d
+                    </span>
                     <button
                       onClick={() => handleCheckIn(habit._id)}
                       disabled={done}
