@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { askAegis } from '../services/aiApi';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 
@@ -7,22 +7,39 @@ function AskAegis() {
   const [answer, setAnswer] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const inputRef = useRef(null);
 
   // voice input
   const { isSupported, listening, transcript, startListening, stopListening } =
     useSpeechRecognition();
 
-  // when speech is recognized, put it in the question box
   useEffect(() => {
     if (transcript) {
       setQuestion(transcript);
     }
   }, [transcript]);
 
+  // press "/" anywhere to focus the ask box
+  useEffect(() => {
+    const handleKey = (e) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+      if (e.key === '/') {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
+
   const suggestions = [
-    'What are my high priority tasks?',
-    'Do I have anything overdue?',
-    'What is my longest streak?',
+    'What needs my attention?',
+    'Anything overdue?',
+    'How am I doing this week?',
   ];
 
   const handleAsk = async (e, presetQuestion) => {
@@ -47,76 +64,105 @@ function AskAegis() {
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 mb-6">
-      <h2 className="font-semibold text-slate-900 flex items-center gap-2">
-        <span>💬</span> Ask Aegis
-      </h2>
-      <p className="text-sm text-slate-500 mt-0.5 mb-3">
-        Ask anything about your tasks and habits — type or speak.
-      </p>
+    <div className="surface-tile">
+      <div className="flex items-center mb-1">
+        <h2 className="display-md">Ask Aegis</h2>
+        <span
+          className="text-[10px] px-1.5 py-0.5 rounded border ml-2"
+          style={{
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-faint)',
+            fontFamily: 'monospace',
+          }}
+        >
+          /
+        </span>
+      </div>
+      <p className="body-sm mb-4">Anything about your tasks, rituals, or diary.</p>
 
       <form onSubmit={handleAsk} className="flex gap-2">
         <input
+          ref={inputRef}
           type="text"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="e.g. What's overdue? How many tasks did I finish?"
-          className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          placeholder="Ask anything about your day…"
+          className="input-lux flex-1"
         />
 
         {isSupported && (
           <button
             type="button"
             onClick={listening ? stopListening : startListening}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
+            className="btn-outline px-3"
+            style={
               listening
-                ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50'
-            }`}
+                ? { borderColor: 'var(--rose)', color: 'var(--rose)' }
+                : undefined
+            }
             title={listening ? 'Stop listening' : 'Speak your question'}
           >
             {listening ? '⏹' : '🎤'}
           </button>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 rounded-lg bg-slate-800 text-white text-sm font-medium hover:bg-slate-900 disabled:bg-slate-400 transition"
-        >
-          {loading ? 'Thinking...' : 'Ask'}
+        <button type="submit" disabled={loading} className="btn-gold">
+          {loading ? 'Thinking…' : 'Ask'}
         </button>
       </form>
 
       {listening && (
-        <div className="flex items-center gap-2 mt-2 text-sm text-red-600">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        <div className="flex items-center gap-2 mt-3 body-sm" style={{ color: 'var(--rose)' }}>
+          <span className="relative flex h-2 w-2">
+            <span
+              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+              style={{ background: 'var(--rose)' }}
+            ></span>
+            <span
+              className="relative inline-flex rounded-full h-2 w-2"
+              style={{ background: 'var(--rose)' }}
+            ></span>
           </span>
-          Listening... ask your question
+          Listening…
         </div>
       )}
 
       {/* suggestion chips */}
-      <div className="flex flex-wrap gap-2 mt-3">
+      <div className="flex flex-wrap gap-2 mt-4">
         {suggestions.map((s) => (
           <button
             key={s}
             onClick={() => handleAsk(null, s)}
             disabled={loading}
-            className="text-xs px-3 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
+            className="text-xs px-3 py-1.5 rounded-full transition"
+            style={{
+              background: 'rgba(0,0,0,0.25)',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-muted)',
+            }}
           >
             {s}
           </button>
         ))}
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="mt-3 body-sm" style={{ color: 'var(--rose)' }}>
+          {error}
+        </p>
+      )}
 
       {answer && (
-        <div className="mt-4 bg-indigo-50 border-l-4 border-indigo-500 rounded-r-lg px-4 py-3">
-          <p className="text-sm text-slate-800">{answer}</p>
+        <div
+          className="mt-4 px-4 py-3 rounded-xl animate-rise"
+          style={{
+            background: 'rgba(212, 175, 122, 0.08)',
+            borderLeft: '2px solid var(--gold)',
+          }}
+        >
+          <p className="body-text" style={{ color: 'var(--text-display)' }}>
+            {answer}
+          </p>
         </div>
       )}
     </div>
