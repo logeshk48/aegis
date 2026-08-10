@@ -1,46 +1,41 @@
-const priorityStyles = {
-  low: 'bg-green-100 text-green-700',
-  medium: 'bg-amber-100 text-amber-700',
-  high: 'bg-red-100 text-red-700',
+const prioClass = {
+  low: 'prio prio-low',
+  medium: 'prio prio-medium',
+  high: 'prio prio-high',
 };
 
 function TaskItem({ task, onToggle, onDelete }) {
+  const due = task.dueDate
+    ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : null;
+
   return (
-    <li
-      className={`group flex items-center gap-3 px-4 py-3 rounded-lg border transition ${
-        task.completed
-          ? 'bg-slate-50 border-slate-200'
-          : 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-sm'
-      }`}
-    >
+    <li className={`task-row ${task.completed ? 'task-row-done' : ''}`}>
       <input
         type="checkbox"
         checked={task.completed}
         onChange={() => onToggle(task._id)}
-        className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+        className="lux-check"
       />
 
       <span
-        className={`flex-1 text-sm ${
-          task.completed ? 'line-through text-slate-400' : 'text-slate-800 font-medium'
-        }`}
+        className={`flex-1 text-sm ${task.completed ? 'task-title-done' : ''}`}
+        style={!task.completed ? { color: 'var(--text-display)' } : undefined}
       >
         {task.title}
       </span>
 
-      <span
-        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-          priorityStyles[task.priority] || 'bg-slate-100 text-slate-600'
-        }`}
-      >
+      {due && (
+        <span className="body-sm" style={{ fontSize: '0.7rem' }}>
+          {due}
+        </span>
+      )}
+
+      <span className={prioClass[task.priority] || 'prio prio-low'}>
         {task.priority}
       </span>
 
-      <button
-        onClick={() => onDelete(task._id)}
-        className="text-slate-300 hover:text-red-500 transition text-lg leading-none px-1"
-        title="Delete task"
-      >
+      <button onClick={() => onDelete(task._id)} className="btn-delete" title="Delete">
         ✕
       </button>
     </li>

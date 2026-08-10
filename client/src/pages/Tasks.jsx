@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import TaskItem from '../components/TaskItem';
-import AskAegis from '../components/AskAegis';
 import { parseTextToTasks } from '../services/aiApi';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
+import '../styles/tasks.css';
 
 function Tasks() {
   const [tasks, setTasks] = useState([]);
@@ -14,12 +14,11 @@ function Tasks() {
   const [aiText, setAiText] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
+  const [filter, setFilter] = useState('all');
 
-  // voice input
   const { isSupported, listening, transcript, startListening, stopListening } =
     useSpeechRecognition();
 
-  // when speech is recognized, put it in the AI textarea
   useEffect(() => {
     if (transcript) {
       setAiText((prev) => (prev ? prev + ' ' + transcript : transcript));
@@ -67,13 +66,13 @@ function Tasks() {
       const data = await parseTextToTasks(aiText);
       if (data.tasks && data.tasks.length > 0) {
         setTasks([...data.tasks, ...tasks]);
-        setAiMessage(`✨ Created ${data.tasks.length} task(s)!`);
+        setAiMessage(`${data.tasks.length} task${data.tasks.length > 1 ? 's' : ''} captured.`);
       } else {
-        setAiMessage('No tasks found in that text. Try being more specific.');
+        setAiMessage('Nothing actionable found. Try being more specific.');
       }
       setAiText('');
     } catch (err) {
-      setError('AI could not process that. Try again.');
+      setError('Could not process that. Try again.');
       console.error(err);
     } finally {
       setAiLoading(false);
@@ -101,59 +100,73 @@ function Tasks() {
     }
   };
 
-  return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">
-        My Tasks {!loading && <span className="text-slate-400 font-normal">({tasks.length})</span>}
-      </h1>
+  const visibleTasks = tasks.filter((t) => {
+    if (filter === 'open') return !t.completed;
+    if (filter === 'done') return t.completed;
+    return true;
+  });
 
-      {/* AI brain-dump box */}
-      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-5 mb-6">
-        <h2 className="font-semibold text-slate-900 flex items-center gap-2">
-          <span>🤖</span> Tell Aegis your plans
-        </h2>
-        <p className="text-sm text-slate-500 mt-0.5 mb-3">
-          Type or speak naturally — Aegis will sort it into organized tasks.
+  const openCount = tasks.filter((t) => !t.completed).length;
+
+  return (
+    <div className="max-w-3xl mx-auto relative z-10">
+      {/* Header */}
+      <div className="animate-rise mb-6">
+        <p className="eyebrow mb-2">Your list</p>
+        <h1 className="display-lg">Tasks</h1>
+        <p className="body-text mt-1">
+          {loading
+            ? 'Gathering everything…'
+            : openCount === 0
+            ? 'Nothing open. Well handled.'
+            : `${openCount} open of ${tasks.length} total.`}
+        </p>
+      </div>
+
+      {/* AI panel */}
+      <div className="ai-panel animate-rise delay-1 mb-6">
+        <p className="eyebrow mb-1">Capture</p>
+        <h2 className="display-md mb-1">Tell Aegis your plans</h2>
+        <p className="body-sm mb-4">
+          Write or speak naturally — it will sort itself out.
         </p>
 
         <form onSubmit={handleAiParse}>
           <textarea
             value={aiText}
             onChange={(e) => setAiText(e.target.value)}
-            placeholder="e.g. gym after work, finish the report by Friday, call mom tomorrow"
+            placeholder="gym after work, finish the report by Friday, call mom tomorrow…"
             rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-indigo-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
+            className="ai-textarea"
           />
 
           {listening && (
-            <div className="flex items-center gap-2 mt-2 text-sm text-red-600">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            <div className="flex items-center gap-2 mt-3 body-sm" style={{ color: 'var(--rose)' }}>
+              <span className="relative flex h-2 w-2">
+                <span
+                  className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                  style={{ background: 'var(--rose)' }}
+                ></span>
+                <span
+                  className="relative inline-flex rounded-full h-2 w-2"
+                  style={{ background: 'var(--rose)' }}
+                ></span>
               </span>
-              Listening... speak now
+              Listening — speak freely, then stop when done.
             </div>
           )}
 
-          <div className="flex items-center gap-2 mt-3">
-            <button
-              type="submit"
-              disabled={aiLoading}
-              className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-400 transition"
-            >
-              {aiLoading ? '🤔 Thinking...' : '✨ Organize with AI'}
+          <div className="flex items-center gap-2 mt-4">
+            <button type="submit" disabled={aiLoading} className="btn-gold">
+              {aiLoading ? 'Thinking…' : 'Organise'}
             </button>
 
             {isSupported && (
               <button
                 type="button"
                 onClick={listening ? stopListening : startListening}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                  listening
-                    ? 'bg-red-500 text-white hover:bg-red-600'
-                    : 'bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50'
-                }`}
-                title={listening ? 'Stop listening' : 'Speak your plans'}
+                className="btn-outline"
+                style={listening ? { borderColor: 'var(--rose)', color: 'var(--rose)' } : undefined}
               >
                 {listening ? '⏹ Stop' : '🎤 Speak'}
               </button>
@@ -161,61 +174,80 @@ function Tasks() {
           </div>
 
           {!isSupported && (
-            <p className="mt-2 text-xs text-slate-400">
-              💡 Voice input isn't supported in this browser — try Chrome or Edge to speak your plans.
+            <p className="body-sm mt-3" style={{ color: 'var(--text-faint)' }}>
+              Voice input needs Chrome or Edge.
             </p>
           )}
 
           {aiMessage && (
-            <p className="mt-3 text-sm font-medium text-indigo-700">{aiMessage}</p>
+            <p className="body-sm mt-3" style={{ color: 'var(--gold)' }}>
+              {aiMessage}
+            </p>
           )}
         </form>
       </div>
 
-      {/* Ask Aegis — question answering */}
-      <AskAegis />
-
-      {/* manual add form */}
-      <form onSubmit={handleAddTask} className="flex gap-2 mb-6">
+      {/* Manual add */}
+      <form onSubmit={handleAddTask} className="flex gap-2 mb-6 animate-rise delay-2">
         <input
           type="text"
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
-          placeholder="Or add one task manually..."
-          className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          placeholder="Add one directly…"
+          className="input-lux flex-1"
         />
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="input-lux"
+          style={{ width: 'auto' }}
         >
           <option value="low">Low</option>
           <option value="medium">Medium</option>
           <option value="high">High</option>
         </select>
-        <button
-          type="submit"
-          className="px-4 py-2 rounded-lg bg-slate-800 text-white text-sm font-medium hover:bg-slate-900 transition"
-        >
+        <button type="submit" className="btn-outline">
           Add
         </button>
       </form>
 
       {error && (
-        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+        <p className="body-sm mb-4" style={{ color: 'var(--rose)' }}>
           {error}
         </p>
       )}
 
+      {/* Filters */}
+      {!loading && tasks.length > 0 && (
+        <div className="flex items-center gap-2 mb-4 animate-rise delay-3">
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'open', label: 'Open' },
+            { key: 'done', label: 'Done' },
+          ].map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`filter-tab ${filter === f.key ? 'filter-tab-active' : ''}`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* List */}
       {loading ? (
-        <p className="text-slate-400 text-sm">Loading your tasks...</p>
-      ) : tasks.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl">
-          <p className="text-slate-400">No tasks yet. Add your first one above! 🎯</p>
+        <p className="body-sm">Loading…</p>
+      ) : visibleTasks.length === 0 ? (
+        <div className="empty-panel animate-rise delay-3">
+          {tasks.length === 0
+            ? 'Nothing here yet. Capture your first thought above.'
+            : 'Nothing in this view.'}
         </div>
       ) : (
-        <ul className="space-y-2">
-          {tasks.map((task) => (
+        <ul className="space-y-2 animate-rise delay-3">
+          {visibleTasks.map((task) => (
             <TaskItem
               key={task._id}
               task={task}
