@@ -3,6 +3,7 @@ import api from '../api/axios';
 import TaskItem from '../components/TaskItem';
 import { parseTextToTasks } from '../services/aiApi';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
+import { GROUPS, groupOf, sortTasks } from '../utils/taskGroups';
 import '../styles/tasks.css';
 
 function Tasks() {
@@ -10,19 +11,18 @@ function Tasks() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState('');
-  const [priority, setPriority] = useState('medium');
+  const [newDue, setNewDue] = useState('');
+  const [newImportant, setNewImportant] = useState(false);
   const [aiText, setAiText] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [showDone, setShowDone] = useState(false);
 
   const { isSupported, listening, transcript, startListening, stopListening } =
     useSpeechRecognition();
 
   useEffect(() => {
-    if (transcript) {
-      setAiText((prev) => (prev ? prev + ' ' + transcript : transcript));
-    }
+    if (transcript) setAiText((prev) => (prev ? prev + ' ' + transcript : transcript));
   }, [transcript]);
 
   useEffect(() => {
@@ -44,10 +44,15 @@ function Tasks() {
     e.preventDefault();
     if (!newTitle.trim()) return;
     try {
-      const res = await api.post('/tasks', { title: newTitle, priority });
+      const res = await api.post('/tasks', {
+        title: newTitle,
+        dueDate: newDue || null,
+        important: newImportant,
+      });
       setTasks([res.data, ...tasks]);
       setNewTitle('');
-      setPriority('medium');
+      setNewDue('');
+      setNewImportant(false);
     } catch (err) {
       setError('Could not add task.');
       console.error(err);
@@ -64,15 +69,15 @@ function Tasks() {
 
     try {
       const data = await parseTextToTasks(aiText);
-      if (data.tasks && data.tasks.length > 0) {
+      if (data.tasks?.length > 0) {
         setTasks([...data.tasks, ...tasks]);
-        setAiMessage(`${data.tasks.length} task${data.tasks.length > 1 ? 's' : ''} captured.`);
+        setAiMessage(`${data.tasks.length} captured.`);
       } else {
-        setAiMessage('Nothing actionable found. Try being more specific.');
+        setAiMessage('Nothing actionable found.');
       }
       setAiText('');
     } catch (err) {
-      setError('Could not process that. Try again.');
+      setError('Could not process that.');
       console.error(err);
     } finally {
       setAiLoading(false);
@@ -82,60 +87,61 @@ function Tasks() {
   const handleToggle = async (id) => {
     try {
       const res = await api.patch(`/tasks/${id}/toggle`);
-      setTasks(tasks.map((task) => (task._id === id ? res.data : task)));
+      setTasks(tasks.map((t) => (t._id === id ? res.data : t)));
     } catch (err) {
-      setError('Could not update task.');
+      console.error(err);
+    }
+  };
+
+  const handleToggleImportant = async (id, value) => {
+    const original = tasks.find((t) => t._id === id);
+    setTasks((prev) => prev.map((t) => (t._id === id ? { ...t, important: value } : t)));
+    try {
+      await api.put(`/tasks/${id}`, { important: value });
+    } catch (err) {
+      setTasks((prev) => prev.map((t) => (t._id === id ? original : t)));
       console.error(err);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this task? This cannot be undone.')) return;
+    if (!window.confirm('Delete this task?')) return;
     try {
       await api.delete(`/tasks/${id}`);
-      setTasks(tasks.filter((task) => task._id !== id));
+      setTasks(tasks.filter((t) => t._id !== id));
     } catch (err) {
-      setError('Could not delete task.');
       console.error(err);
     }
   };
 
-  const visibleTasks = tasks.filter((t) => {
-    if (filter === 'open') return !t.completed;
-    if (filter === 'done') return t.completed;
-    return true;
-  });
-
-  const openCount = tasks.filter((t) => !t.completed).length;
+  const openTasks = tasks.filter((t) => !t.completed);
+  const doneTasks = tasks.filter((t) => t.completed).sort(sortTasks);
 
   return (
     <div className="max-w-3xl mx-auto relative z-10">
-      {/* Header */}
       <div className="animate-rise mb-6">
         <p className="eyebrow mb-2">Your list</p>
         <h1 className="display-lg">Tasks</h1>
         <p className="body-text mt-1">
           {loading
-            ? 'Gathering everything…'
-            : openCount === 0
+            ? 'Gathering…'
+            : openTasks.length === 0
             ? 'Nothing open. Well handled.'
-            : `${openCount} open of ${tasks.length} total.`}
+            : `${openTasks.length} open.`}
         </p>
       </div>
 
-      {/* AI panel */}
+      {/* AI capture */}
       <div className="ai-panel animate-rise delay-1 mb-6">
         <p className="eyebrow mb-1">Capture</p>
         <h2 className="display-md mb-1">Tell Aegis your plans</h2>
-        <p className="body-sm mb-4">
-          Write or speak naturally — it will sort itself out.
-        </p>
+        <p className="body-sm mb-4">Mention dates and it will schedule them for you.</p>
 
         <form onSubmit={handleAiParse}>
           <textarea
             value={aiText}
             onChange={(e) => setAiText(e.target.value)}
-            placeholder="gym after work, finish the report by Friday, call mom tomorrow…"
+            placeholder="finish the report by Friday, call mom tomorrow…"
             rows={3}
             className="ai-textarea"
           />
@@ -143,16 +149,10 @@ function Tasks() {
           {listening && (
             <div className="flex items-center gap-2 mt-3 body-sm" style={{ color: 'var(--rose)' }}>
               <span className="relative flex h-2 w-2">
-                <span
-                  className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                  style={{ background: 'var(--rose)' }}
-                ></span>
-                <span
-                  className="relative inline-flex rounded-full h-2 w-2"
-                  style={{ background: 'var(--rose)' }}
-                ></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--rose)' }}></span>
+                <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: 'var(--rose)' }}></span>
               </span>
-              Listening — speak freely, then stop when done.
+              Listening…
             </div>
           )}
 
@@ -160,7 +160,6 @@ function Tasks() {
             <button type="submit" disabled={aiLoading} className="btn-gold">
               {aiLoading ? 'Thinking…' : 'Organise'}
             </button>
-
             {isSupported && (
               <button
                 type="button"
@@ -173,89 +172,110 @@ function Tasks() {
             )}
           </div>
 
-          {!isSupported && (
-            <p className="body-sm mt-3" style={{ color: 'var(--text-faint)' }}>
-              Voice input needs Chrome or Edge.
-            </p>
-          )}
-
           {aiMessage && (
-            <p className="body-sm mt-3" style={{ color: 'var(--gold)' }}>
-              {aiMessage}
-            </p>
+            <p className="body-sm mt-3" style={{ color: 'var(--gold)' }}>{aiMessage}</p>
           )}
         </form>
       </div>
 
-      {/* Manual add */}
-      <form onSubmit={handleAddTask} className="flex gap-2 mb-6 animate-rise delay-2">
+      {/* Manual add — date + star, no priority dropdown */}
+      <form onSubmit={handleAddTask} className="flex flex-wrap gap-2 mb-8 animate-rise delay-2">
         <input
           type="text"
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
           placeholder="Add one directly…"
           className="input-lux flex-1"
+          style={{ minWidth: '180px' }}
         />
-        <select
-          value={priority}
-          onChange={(e) => setPriority(e.target.value)}
-          className="input-lux"
-          style={{ width: 'auto' }}
+        <input
+          type="date"
+          value={newDue}
+          onChange={(e) => setNewDue(e.target.value)}
+          className="date-input"
+        />
+        <button
+          type="button"
+          onClick={() => setNewImportant(!newImportant)}
+          className={`btn-outline ${newImportant ? 'star-on' : ''}`}
+          style={newImportant ? { borderColor: 'var(--gold)', color: 'var(--gold)' } : undefined}
+          title="Mark as important"
         >
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
-        <button type="submit" className="btn-outline">
-          Add
+          {newImportant ? '★' : '☆'}
         </button>
+        <button type="submit" className="btn-gold">Add</button>
       </form>
 
-      {error && (
-        <p className="body-sm mb-4" style={{ color: 'var(--rose)' }}>
-          {error}
-        </p>
-      )}
+      {error && <p className="body-sm mb-4" style={{ color: 'var(--rose)' }}>{error}</p>}
 
-      {/* Filters */}
-      {!loading && tasks.length > 0 && (
-        <div className="flex items-center gap-2 mb-4 animate-rise delay-3">
-          {[
-            { key: 'all', label: 'All' },
-            { key: 'open', label: 'Open' },
-            { key: 'done', label: 'Done' },
-          ].map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`filter-tab ${filter === f.key ? 'filter-tab-active' : ''}`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* List */}
+      {/* Grouped by derived urgency */}
       {loading ? (
         <p className="body-sm">Loading…</p>
-      ) : visibleTasks.length === 0 ? (
-        <div className="empty-panel animate-rise delay-3">
-          {tasks.length === 0
-            ? 'Nothing here yet. Capture your first thought above.'
-            : 'Nothing in this view.'}
-        </div>
+      ) : openTasks.length === 0 ? (
+        <div className="empty-panel">Nothing open. Capture something above.</div>
       ) : (
-        <ul className="space-y-2 animate-rise delay-3">
-          {visibleTasks.map((task) => (
-            <TaskItem
-              key={task._id}
-              task={task}
-              onToggle={handleToggle}
-              onDelete={handleDelete}
-            />
-          ))}
-        </ul>
+        <div className="space-y-8 animate-rise delay-3">
+          {GROUPS.map((g) => {
+            const inGroup = openTasks.filter((t) => groupOf(t) === g.key).sort(sortTasks);
+            if (inGroup.length === 0) return null;
+
+            return (
+              <div key={g.key}>
+                <div className="group-head">
+                  <h2
+                    className="display-md"
+                    style={{
+                      fontSize: '1.05rem',
+                      color: g.key === 'overdue' ? 'var(--rose)' : undefined,
+                    }}
+                  >
+                    {g.label}
+                  </h2>
+                  <span className="group-count">{inGroup.length}</span>
+                </div>
+
+                <ul className="space-y-2">
+                  {inGroup.map((task) => (
+                    <TaskItem
+                      key={task._id}
+                      task={task}
+                      onToggle={handleToggle}
+                      onDelete={handleDelete}
+                      onToggleImportant={handleToggleImportant}
+                    />
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Completed, collapsed */}
+      {doneTasks.length > 0 && (
+        <div className="mt-10">
+          <button
+            onClick={() => setShowDone(!showDone)}
+            className="body-sm hover:underline"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            {showDone ? '▾' : '▸'} Completed ({doneTasks.length})
+          </button>
+
+          {showDone && (
+            <ul className="space-y-2 mt-3">
+              {doneTasks.map((task) => (
+                <TaskItem
+                  key={task._id}
+                  task={task}
+                  onToggle={handleToggle}
+                  onDelete={handleDelete}
+                  onToggleImportant={handleToggleImportant}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </div>
   );

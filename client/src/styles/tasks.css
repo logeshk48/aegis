@@ -1,7 +1,7 @@
 /* ===== TASKS ===== */
 
 @layer components {
-  /* the AI brain-dump panel — the hero of this page */
+  /* the AI capture panel — the hero of this page */
   .ai-panel {
     position: relative;
     overflow: hidden;
@@ -61,20 +61,6 @@
     color: var(--text-faint);
   }
 
-  /* priority marks */
-  .prio {
-    font-size: 0.62rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    padding: 0.18rem 0.55rem;
-    border-radius: 999px;
-    white-space: nowrap;
-  }
-  .prio-high { background: rgba(201, 139, 139, 0.15); color: var(--rose); }
-  .prio-medium { background: rgba(212, 175, 122, 0.13); color: var(--gold); }
-  .prio-low { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); }
-
   .btn-delete {
     color: var(--text-faint);
     font-size: 1rem;
@@ -83,6 +69,56 @@
     transition: color 0.3s var(--ease);
   }
   .btn-delete:hover { color: var(--rose); }
+
+  /* group headers */
+  .group-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .group-count {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+  }
+
+  /* star toggle */
+  .star-btn {
+    font-size: 0.95rem;
+    line-height: 1;
+    color: var(--text-faint);
+    transition: all 0.3s var(--ease);
+    flex-shrink: 0;
+  }
+  .star-btn:hover { color: var(--gold); transform: scale(1.15); }
+  .star-on { color: var(--gold); }
+
+  /* due chip, coloured by urgency */
+  .due-chip {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .due-overdue { background: rgba(201, 139, 139, 0.15); color: var(--rose); }
+  .due-today { background: rgba(212, 175, 122, 0.16); color: var(--gold); }
+  .due-soon { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); }
+
+  /* date input */
+  .date-input {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.85rem;
+    padding: 0.8rem 0.9rem;
+    color: var(--text-body);
+    font-size: 0.85rem;
+    color-scheme: dark;
+  }
+  .date-input:focus { outline: none; border-color: var(--gold); }
 
   /* empty state */
   .empty-panel {
@@ -93,22 +129,5 @@
     color: var(--text-faint);
     font-style: italic;
     font-size: 0.85rem;
-  }
-
-  /* filter tabs */
-  .filter-tab {
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 0.4rem 0.9rem;
-    border-radius: 999px;
-    color: var(--text-muted);
-    border: 1px solid transparent;
-    transition: all 0.3s var(--ease);
-  }
-  .filter-tab:hover { color: var(--text-display); }
-  .filter-tab-active {
-    background: rgba(212, 175, 122, 0.12);
-    color: var(--gold);
-    border-color: rgba(212, 175, 122, 0.25);
   }
 }

@@ -1,0 +1,114 @@
+/* ===== HABITS ===== */
+
+@layer components {
+  /* category accent colours */
+  .cat-health { --cat: #8fbf9f; }
+  .cat-mind { --cat: #9b8fc4; }
+  .cat-craft { --cat: #d4af7a; }
+  .cat-connection { --cat: #c98b8b; }
+
+  .cat-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--cat);
+    flex-shrink: 0;
+  }
+
+  .cat-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--cat);
+  }
+
+  .cat-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* ---- week grid ---- */
+  .habit-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 1rem;
+    background: linear-gradient(160deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    border: 1px solid var(--border-subtle);
+    border-left: 2px solid var(--cat, var(--border-subtle));
+    transition: all 0.4s var(--ease);
+  }
+  .habit-card:hover { border-color: var(--border-hover); }
+
+  .week-grid {
+    display: flex;
+    gap: 0.3rem;
+    flex-shrink: 0;
+  }
+
+  .day-cell {
+    width: 22px;
+    height: 22px;
+    border-radius: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-faint);
+    transition: all 0.3s var(--ease);
+  }
+
+  .day-done {
+    background: var(--cat, var(--gold));
+    color: var(--bg-base);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--cat, var(--gold)) 40%, transparent);
+  }
+
+  .day-today {
+    outline: 1px solid var(--gold);
+    outline-offset: 1px;
+  }
+
+  .day-future { opacity: 0.35; }
+
+  /* ---- momentum status ---- */
+  .momentum {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .mom-thriving { background: rgba(212, 175, 122, 0.15); color: var(--gold); }
+  .mom-risk { background: rgba(201, 139, 139, 0.15); color: var(--rose); }
+  .mom-dormant { background: rgba(255, 255, 255, 0.04); color: var(--text-faint); }
+
+  /* category picker in the add form */
+  .cat-pick {
+    font-size: 0.7rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    background: transparent;
+    transition: all 0.3s var(--ease);
+  }
+  .cat-pick-active {
+    border-color: var(--cat);
+    color: var(--cat);
+    background: color-mix(in srgb, var(--cat) 12%, transparent);
+  }
+
+  @media (max-width: 640px) {
+    .habit-card { flex-wrap: wrap; gap: 0.75rem; }
+    .day-cell { width: 19px; height: 19px; }
+  }
+}
