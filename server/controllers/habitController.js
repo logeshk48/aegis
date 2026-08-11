@@ -31,16 +31,19 @@ const calculateStreak = (completedDates) => {
 // @access Protected
 const createHabit = async (req, res) => {
   try {
-    const { name, frequency } = req.body;
+    const { name, frequency, category } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ message: 'Habit name is required' });
     }
 
+    const validCategories = ['health', 'mind', 'craft', 'connection'];
+
     const habit = await Habit.create({
       user: req.user._id,
       name: name.trim(),
       frequency: frequency || 'daily',
+      category: validCategories.includes(category) ? category : 'health',
     });
 
     res.status(201).json(habit);

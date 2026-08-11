@@ -2,10 +2,9 @@ const mongoose = require('mongoose');
 
 const taskSchema = new mongoose.Schema(
   {
-    // the user who owns this task
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',           // links to the User model
+      ref: 'User',
       required: true,
     },
     title: {
@@ -15,26 +14,29 @@ const taskSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      trim: true,
       default: '',
     },
     completed: {
       type: Boolean,
       default: false,
     },
+    // kept for backwards compatibility + AI parsing
     priority: {
       type: String,
-      enum: ['low', 'medium', 'high'],  // only these values allowed
+      enum: ['low', 'medium', 'high'],
       default: 'medium',
+    },
+    // explicit "this matters" flag
+    important: {
+      type: Boolean,
+      default: false,
     },
     dueDate: {
       type: Date,
       default: null,
     },
   },
-  {
-    timestamps: true,   // auto-adds createdAt and updatedAt
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model('Task', taskSchema);
