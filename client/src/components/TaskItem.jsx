@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { dueLabel, groupOf } from '../utils/taskGroups';
 
 const dueChipClass = (task) => {
@@ -7,7 +8,36 @@ const dueChipClass = (task) => {
   return 'due-chip due-soon';
 };
 
-function TaskItem({ task, onToggle, onDelete, onToggleImportant }) {
+function TaskItem({ task, onToggle, onDelete, onToggleImportant, onRename }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(task.title);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  const commit = () => {
+    const clean = draft.trim();
+    if (clean && clean !== task.title) {
+      onRename(task._id, clean);
+    } else {
+      setDraft(task.title);
+    }
+    setEditing(false);
+  };
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter') commit();
+    if (e.key === 'Escape') {
+      setDraft(task.title);
+      setEditing(false);
+    }
+  };
+
   const label = dueLabel(task);
 
   return (
@@ -27,18 +57,37 @@ function TaskItem({ task, onToggle, onDelete, onToggleImportant }) {
         {task.important ? '★' : '☆'}
       </button>
 
-      <span
-        className={`flex-1 text-sm ${task.completed ? 'task-title-done' : ''}`}
-        style={!task.completed ? { color: 'var(--text-display)' } : undefined}
-      >
-        {task.title}
-      </span>
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={handleKey}
+          className="edit-input"
+        />
+      ) : (
+        <span
+          onClick={() => !task.completed && setEditing(true)}
+          className={`flex-1 text-sm task-title-editable ${
+            task.completed ? 'task-title-done' : ''
+          }`}
+          style={!task.completed ? { color: 'var(--text-display)' } : undefined}
+          title="Click to edit"
+        >
+          {task.title}
+        </span>
+      )}
 
-      {label && !task.completed && <span className={dueChipClass(task)}>{label}</span>}
+      {label && !task.completed && !editing && (
+        <span className={dueChipClass(task)}>{label}</span>
+      )}
 
-      <button onClick={() => onDelete(task._id)} className="btn-delete" title="Delete">
-        ✕
-      </button>
+      {!editing && (
+        <button onClick={() => onDelete(task._id)} className="btn-delete" title="Delete">
+          ✕
+        </button>
+      )}
     </li>
   );
 }
