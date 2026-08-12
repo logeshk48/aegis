@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import TaskItem from '../components/TaskItem';
+import UndoToast from '../components/UndoToast';
 import { parseTextToTasks } from '../services/aiApi';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { GROUPS, groupOf, sortTasks } from '../utils/taskGroups';
@@ -17,6 +18,7 @@ function Tasks() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
   const [showDone, setShowDone] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const { isSupported, listening, transcript, startListening, stopListening } =
     useSpeechRecognition();
@@ -87,7 +89,7 @@ function Tasks() {
   const handleToggle = async (id) => {
     try {
       const res = await api.patch(`/tasks/${id}/toggle`);
-      setTasks(tasks.map((t) => (t._id === id ? res.data : t)));
+      setTasks((prev) => prev.map((t) => (t._id === id ? res.data : t)));
     } catch (err) {
       console.error(err);
     }
@@ -104,14 +106,41 @@ function Tasks() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this task?')) return;
+  const handleRename = async (id, title) => {
+    const original = tasks.find((t) => t._id === id);
+    setTasks((prev) => prev.map((t) => (t._id === id ? { ...t, title } : t)));
     try {
-      await api.delete(`/tasks/${id}`);
-      setTasks(tasks.filter((t) => t._id !== id));
+      await api.put(`/tasks/${id}`, { title });
     } catch (err) {
+      setTasks((prev) => prev.map((t) => (t._id === id ? original : t)));
       console.error(err);
     }
+  };
+
+  // remove from view immediately; actually delete when the toast expires
+  const handleDelete = (id) => {
+    const task = tasks.find((t) => t._id === id);
+    if (!task) return;
+    setTasks((prev) => prev.filter((t) => t._id !== id));
+    setPendingDelete({ task });
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const { task } = pendingDelete;
+    setPendingDelete(null);
+    try {
+      await api.delete(`/tasks/${task._id}`);
+    } catch (err) {
+      setTasks((prev) => [task, ...prev]);
+      console.error(err);
+    }
+  };
+
+  const undoDelete = () => {
+    if (!pendingDelete) return;
+    setTasks((prev) => [pendingDelete.task, ...prev]);
+    setPendingDelete(null);
   };
 
   const openTasks = tasks.filter((t) => !t.completed);
@@ -178,7 +207,7 @@ function Tasks() {
         </form>
       </div>
 
-      {/* Manual add — date + star, no priority dropdown */}
+      {/* Manual add */}
       <form onSubmit={handleAddTask} className="flex flex-wrap gap-2 mb-8 animate-rise delay-2">
         <input
           type="text"
@@ -242,6 +271,7 @@ function Tasks() {
                       onToggle={handleToggle}
                       onDelete={handleDelete}
                       onToggleImportant={handleToggleImportant}
+                      onRename={handleRename}
                     />
                   ))}
                 </ul>
@@ -271,11 +301,20 @@ function Tasks() {
                   onToggle={handleToggle}
                   onDelete={handleDelete}
                   onToggleImportant={handleToggleImportant}
+                  onRename={handleRename}
                 />
               ))}
             </ul>
           )}
         </div>
+      )}
+
+      {pendingDelete && (
+        <UndoToast
+          message={`"${pendingDelete.task.title}" deleted`}
+          onUndo={undoDelete}
+          onExpire={confirmDelete}
+        />
       )}
     </div>
   );

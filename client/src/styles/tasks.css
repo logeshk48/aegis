@@ -61,6 +61,27 @@
     color: var(--text-faint);
   }
 
+  /* inline edit */
+  .edit-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--gold);
+    border-radius: 0.5rem;
+    padding: 0.3rem 0.6rem;
+    color: var(--text-display);
+    font-size: 0.875rem;
+    outline: none;
+  }
+
+  .task-title-editable {
+    cursor: text;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s var(--ease);
+  }
+  .task-row:hover .task-title-editable {
+    border-bottom-color: var(--border-subtle);
+  }
+
   .btn-delete {
     color: var(--text-faint);
     font-size: 1rem;
@@ -129,5 +150,76 @@
     color: var(--text-faint);
     font-style: italic;
     font-size: 0.85rem;
+  }
+
+  /* ---- undo toast ---- */
+  .toast-wrap {
+    position: fixed;
+    bottom: 6.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    width: max-content;
+    max-width: 90vw;
+  }
+
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 999px;
+    background: rgba(20, 16, 31, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    animation: toastIn 0.5s var(--ease) both;
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .toast-leaving { animation: toastOut 0.35s var(--ease) both; }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(12px); }
+  }
+
+  .toast-msg {
+    font-size: 0.82rem;
+    color: var(--text-body);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 55vw;
+  }
+
+  .toast-undo {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.02em;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+  }
+  .toast-undo:hover { opacity: 0.75; }
+
+  .toast-timer {
+    position: absolute;
+    bottom: 0;
+    left: 1.25rem;
+    right: 1.25rem;
+    height: 1.5px;
+    background: var(--gold);
+    opacity: 0.4;
+    transform-origin: left;
+    animation: timerShrink 5s linear both;
+  }
+  @keyframes timerShrink {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
   }
 }
