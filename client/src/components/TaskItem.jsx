@@ -8,7 +8,21 @@ const dueChipClass = (task) => {
   return 'due-chip due-soon';
 };
 
-function TaskItem({ task, onToggle, onDelete, onToggleImportant, onRename }) {
+// date helpers for quick scheduling
+const offsetDate = (days) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(12, 0, 0, 0);
+  return d.toISOString();
+};
+
+const QUICK = [
+  { label: 'Today', days: 0 },
+  { label: 'Tmrw', days: 1 },
+  { label: 'Next wk', days: 7 },
+];
+
+function TaskItem({ task, onToggle, onDelete, onToggleImportant, onRename, onReschedule, index = 0 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
   const inputRef = useRef(null);
@@ -41,7 +55,10 @@ function TaskItem({ task, onToggle, onDelete, onToggleImportant, onRename }) {
   const label = dueLabel(task);
 
   return (
-    <li className={`task-row ${task.completed ? 'task-row-done' : ''}`}>
+    <li
+      className={`task-row row-in ${task.completed ? 'task-row-done' : ''}`}
+      style={{ animationDelay: `${Math.min(index * 40, 300)}ms` }}
+    >
       <input
         type="checkbox"
         checked={task.completed}
@@ -77,6 +94,31 @@ function TaskItem({ task, onToggle, onDelete, onToggleImportant, onRename }) {
         >
           {task.title}
         </span>
+      )}
+
+      {/* quick schedule — revealed on hover */}
+      {!editing && !task.completed && (
+        <div className="quick-sched">
+          {QUICK.map((q) => (
+            <button
+              key={q.label}
+              onClick={() => onReschedule(task._id, offsetDate(q.days))}
+              className="sched-chip"
+              title={`Move to ${q.label}`}
+            >
+              {q.label}
+            </button>
+          ))}
+          {task.dueDate && (
+            <button
+              onClick={() => onReschedule(task._id, null)}
+              className="sched-chip"
+              title="Remove date"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       )}
 
       {label && !task.completed && !editing && (

@@ -17,6 +17,7 @@ function Tasks() {
   const [aiText, setAiText] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
+  const [aiOpen, setAiOpen] = useState(false);
   const [showDone, setShowDone] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
 
@@ -117,7 +118,17 @@ function Tasks() {
     }
   };
 
-  // remove from view immediately; actually delete when the toast expires
+  const handleReschedule = async (id, isoDate) => {
+    const original = tasks.find((t) => t._id === id);
+    setTasks((prev) => prev.map((t) => (t._id === id ? { ...t, dueDate: isoDate } : t)));
+    try {
+      await api.put(`/tasks/${id}`, { dueDate: isoDate });
+    } catch (err) {
+      setTasks((prev) => prev.map((t) => (t._id === id ? original : t)));
+      console.error(err);
+    }
+  };
+
   const handleDelete = (id) => {
     const task = tasks.find((t) => t._id === id);
     if (!task) return;
@@ -160,51 +171,69 @@ function Tasks() {
         </p>
       </div>
 
-      {/* AI capture */}
-      <div className="ai-panel animate-rise delay-1 mb-6">
-        <p className="eyebrow mb-1">Capture</p>
-        <h2 className="display-md mb-1">Tell Aegis your plans</h2>
-        <p className="body-sm mb-4">Mention dates and it will schedule them for you.</p>
-
-        <form onSubmit={handleAiParse}>
-          <textarea
-            value={aiText}
-            onChange={(e) => setAiText(e.target.value)}
-            placeholder="finish the report by Friday, call mom tomorrow…"
-            rows={3}
-            className="ai-textarea"
-          />
-
-          {listening && (
-            <div className="flex items-center gap-2 mt-3 body-sm" style={{ color: 'var(--rose)' }}>
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--rose)' }}></span>
-                <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: 'var(--rose)' }}></span>
-              </span>
-              Listening…
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 mt-4">
-            <button type="submit" disabled={aiLoading} className="btn-gold">
-              {aiLoading ? 'Thinking…' : 'Organise'}
-            </button>
-            {isSupported && (
-              <button
-                type="button"
-                onClick={listening ? stopListening : startListening}
-                className="btn-outline"
-                style={listening ? { borderColor: 'var(--rose)', color: 'var(--rose)' } : undefined}
-              >
-                {listening ? '⏹ Stop' : '🎤 Speak'}
+      {/* AI capture — collapsed by default */}
+      <div className="mb-6 animate-rise delay-1">
+        {!aiOpen ? (
+          <button onClick={() => setAiOpen(true)} className="ai-collapsed">
+            <span style={{ color: 'var(--gold)' }}>✦</span>
+            <span className="ai-collapsed-text">Tell Aegis your plans…</span>
+            <span className="body-sm" style={{ color: 'var(--text-faint)' }}>expand</span>
+          </button>
+        ) : (
+          <div className="ai-panel panel-expand">
+            <div className="flex items-start justify-between mb-1">
+              <div>
+                <p className="eyebrow mb-1">Capture</p>
+                <h2 className="display-md">Tell Aegis your plans</h2>
+              </div>
+              <button onClick={() => setAiOpen(false)} className="btn-delete" title="Collapse">
+                ▴
               </button>
-            )}
-          </div>
+            </div>
+            <p className="body-sm mb-4">Mention dates and it will schedule them for you.</p>
 
-          {aiMessage && (
-            <p className="body-sm mt-3" style={{ color: 'var(--gold)' }}>{aiMessage}</p>
-          )}
-        </form>
+            <form onSubmit={handleAiParse}>
+              <textarea
+                value={aiText}
+                onChange={(e) => setAiText(e.target.value)}
+                placeholder="finish the report by Friday, call mom tomorrow…"
+                rows={3}
+                className="ai-textarea"
+                autoFocus
+              />
+
+              {listening && (
+                <div className="flex items-center gap-2 mt-3 body-sm" style={{ color: 'var(--rose)' }}>
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--rose)' }}></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: 'var(--rose)' }}></span>
+                  </span>
+                  Listening…
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 mt-4">
+                <button type="submit" disabled={aiLoading} className="btn-gold">
+                  {aiLoading ? 'Thinking…' : 'Organise'}
+                </button>
+                {isSupported && (
+                  <button
+                    type="button"
+                    onClick={listening ? stopListening : startListening}
+                    className="btn-outline"
+                    style={listening ? { borderColor: 'var(--rose)', color: 'var(--rose)' } : undefined}
+                  >
+                    {listening ? '⏹ Stop' : '🎤 Speak'}
+                  </button>
+                )}
+              </div>
+
+              {aiMessage && (
+                <p className="body-sm mt-3" style={{ color: 'var(--gold)' }}>{aiMessage}</p>
+              )}
+            </form>
+          </div>
+        )}
       </div>
 
       {/* Manual add */}
@@ -243,7 +272,7 @@ function Tasks() {
       ) : openTasks.length === 0 ? (
         <div className="empty-panel">Nothing open. Capture something above.</div>
       ) : (
-        <div className="space-y-8 animate-rise delay-3">
+        <div className="space-y-8">
           {GROUPS.map((g) => {
             const inGroup = openTasks.filter((t) => groupOf(t) === g.key).sort(sortTasks);
             if (inGroup.length === 0) return null;
@@ -264,14 +293,16 @@ function Tasks() {
                 </div>
 
                 <ul className="space-y-2">
-                  {inGroup.map((task) => (
+                  {inGroup.map((task, i) => (
                     <TaskItem
                       key={task._id}
                       task={task}
+                      index={i}
                       onToggle={handleToggle}
                       onDelete={handleDelete}
                       onToggleImportant={handleToggleImportant}
                       onRename={handleRename}
+                      onReschedule={handleReschedule}
                     />
                   ))}
                 </ul>
@@ -294,14 +325,16 @@ function Tasks() {
 
           {showDone && (
             <ul className="space-y-2 mt-3">
-              {doneTasks.map((task) => (
+              {doneTasks.map((task, i) => (
                 <TaskItem
                   key={task._id}
                   task={task}
+                  index={i}
                   onToggle={handleToggle}
                   onDelete={handleDelete}
                   onToggleImportant={handleToggleImportant}
                   onRename={handleRename}
+                  onReschedule={handleReschedule}
                 />
               ))}
             </ul>
