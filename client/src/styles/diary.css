@@ -1,0 +1,150 @@
+/* ===== DIARY ===== */
+
+@layer components {
+  /* the writing surface */
+  .diary-composer {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(150deg, var(--bg-elevated) 0%, var(--bg-raised) 60%, var(--bg-base) 100%);
+    border: 1px solid var(--border-subtle);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-soft);
+  }
+  .diary-composer::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 8%; right: 8%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.55;
+  }
+
+  .diary-textarea {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.9rem;
+    padding: 1rem 1.15rem;
+    color: var(--text-display);
+    font-size: 0.95rem;
+    line-height: 1.85;
+    resize: vertical;
+    transition: all 0.4s var(--ease);
+  }
+  .diary-textarea::placeholder {
+    color: var(--text-faint);
+    font-style: italic;
+  }
+  .diary-textarea:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(212, 175, 122, 0.08);
+  }
+
+  /* word count */
+  .word-count {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- entry cards ---- */
+  .entry-card {
+    position: relative;
+    background: linear-gradient(160deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    border: 1px solid var(--border-subtle);
+    border-left: 2px solid rgba(212, 175, 122, 0.25);
+    border-radius: 1rem;
+    padding: 1.25rem 1.4rem;
+    transition: all 0.4s var(--ease);
+  }
+  .entry-card:hover {
+    border-color: var(--border-hover);
+    border-left-color: var(--gold);
+  }
+
+  .entry-date {
+    font-family: 'Fraunces', serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-display);
+  }
+
+  .entry-relative {
+    font-size: 0.68rem;
+    color: var(--text-faint);
+    letter-spacing: 0.04em;
+  }
+
+  .entry-body {
+    font-size: 0.88rem;
+    line-height: 1.8;
+    color: var(--text-body);
+    white-space: pre-wrap;
+    transition: max-height 0.5s var(--ease);
+  }
+
+  .entry-clamped {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .entry-more {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--gold);
+    margin-top: 0.6rem;
+    transition: opacity 0.2s;
+  }
+  .entry-more:hover { opacity: 0.75; }
+
+  .extract-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.66rem;
+    font-weight: 600;
+    padding: 0.22rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(212, 175, 122, 0.1);
+    color: var(--gold);
+    border: 1px solid rgba(212, 175, 122, 0.2);
+  }
+
+  /* timeline spine on larger screens */
+  @media (min-width: 768px) {
+    .entry-list {
+      position: relative;
+      padding-left: 1.5rem;
+    }
+    .entry-list::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.5rem;
+      bottom: 0.5rem;
+      width: 1px;
+      background: linear-gradient(
+        180deg,
+        transparent,
+        var(--border-subtle) 10%,
+        var(--border-subtle) 90%,
+        transparent
+      );
+    }
+    .entry-card::after {
+      content: '';
+      position: absolute;
+      left: -1.85rem;
+      top: 1.6rem;
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--gold);
+      opacity: 0.5;
+    }
+  }
+}

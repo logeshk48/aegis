@@ -1,6 +1,28 @@
 import { useState, useEffect } from 'react';
 import { createDiaryEntry, getDiaryEntries, deleteDiaryEntry } from '../services/aiApi';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
+import '../styles/diary.css';
+
+const relativeDay = (dateStr) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr);
+  d.setHours(0, 0, 0, 0);
+  const diff = Math.round((today - d) / 86400000);
+
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  if (diff < 7) return `${diff} days ago`;
+  if (diff < 30) return `${Math.floor(diff / 7)}w ago`;
+  return `${Math.floor(diff / 30)}mo ago`;
+};
+
+const formatDate = (dateStr) =>
+  new Date(dateStr).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
 
 function Diary() {
   const [entries, setEntries] = useState([]);
@@ -9,11 +31,11 @@ function Diary() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [expanded, setExpanded] = useState({});
 
   const { isSupported, listening, transcript, startListening, stopListening } =
     useSpeechRecognition();
 
-  // append spoken text to the entry
   useEffect(() => {
     if (transcript) {
       setContent((prev) => (prev ? prev + ' ' + transcript : transcript));
@@ -57,7 +79,7 @@ function Diary() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this entry?')) return;
+    if (!window.confirm('Remove this entry?')) return;
     try {
       await deleteDiaryEntry(id);
       setEntries(entries.filter((en) => en._id !== id));
@@ -67,99 +89,154 @@ function Diary() {
     }
   };
 
-  const formatDate = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-  };
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+
+  const promptLine = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'What are you carrying into today?';
+    if (h < 18) return 'How has the day treated you?';
+    return 'What happened today worth remembering?';
+  })();
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-900 mb-1">My Diary 📔</h1>
-      <p className="text-slate-500 text-sm mb-6">
-        Write about your day — Aegis will remember it and pull out any tasks.
-      </p>
+    <div className="max-w-3xl mx-auto relative z-10">
+      {/* Header */}
+      <div className="animate-rise mb-6">
+        <p className="eyebrow mb-2">Your record</p>
+        <h1 className="display-lg">Diary</h1>
+        <p className="body-text mt-1">
+          {loading
+            ? 'Gathering…'
+            : entries.length === 0
+            ? 'Write your day. Aegis will remember it for you.'
+            : `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} kept.`}
+        </p>
+      </div>
 
-      {/* Write box */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 mb-8">
+      {/* Composer */}
+      <div className="diary-composer animate-rise delay-1 mb-10">
+        <p className="eyebrow mb-1">Today</p>
+        <h2 className="display-md mb-4">{promptLine}</h2>
+
         <form onSubmit={handleSave}>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Today I... (write or speak the whole story of your day)"
-            rows={6}
-            className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
+            placeholder="Write freely — Aegis will pull out anything that needs doing…"
+            rows={7}
+            className="diary-textarea"
           />
 
           {listening && (
-            <div className="flex items-center gap-2 mt-2 text-sm text-red-600">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            <div className="flex items-center gap-2 mt-3 body-sm" style={{ color: 'var(--rose)' }}>
+              <span className="relative flex h-2 w-2">
+                <span
+                  className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                  style={{ background: 'var(--rose)' }}
+                ></span>
+                <span
+                  className="relative inline-flex rounded-full h-2 w-2"
+                  style={{ background: 'var(--rose)' }}
+                ></span>
               </span>
-              Listening... tell me about your day
+              Listening — speak freely, then stop when you're done.
             </div>
           )}
 
-          <div className="flex items-center gap-2 mt-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-400 transition"
-            >
-              {saving ? 'Saving...' : 'Save Entry'}
+          <div className="flex items-center gap-2 mt-4 flex-wrap">
+            <button type="submit" disabled={saving || !content.trim()} className="btn-gold">
+              {saving ? 'Keeping…' : 'Keep this'}
             </button>
 
             {isSupported && (
               <button
                 type="button"
                 onClick={listening ? stopListening : startListening}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                  listening
-                    ? 'bg-red-500 text-white hover:bg-red-600'
-                    : 'bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50'
-                }`}
+                className="btn-outline"
+                style={listening ? { borderColor: 'var(--rose)', color: 'var(--rose)' } : undefined}
               >
                 {listening ? '⏹ Stop' : '🎤 Speak'}
               </button>
             )}
+
+            <span className="word-count ml-auto">
+              {wordCount} {wordCount === 1 ? 'word' : 'words'}
+            </span>
           </div>
 
-          {message && <p className="mt-3 text-sm font-medium text-indigo-700">{message}</p>}
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          {message && (
+            <p className="body-sm mt-3" style={{ color: 'var(--gold)' }}>
+              {message}
+            </p>
+          )}
+          {error && (
+            <p className="body-sm mt-3" style={{ color: 'var(--rose)' }}>
+              {error}
+            </p>
+          )}
         </form>
       </div>
 
       {/* Past entries */}
-      <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">Past entries</h2>
+      <div className="group-head">
+        <h2 className="display-md" style={{ fontSize: '1.05rem' }}>
+          Earlier
+        </h2>
+        {!loading && <span className="group-count">{entries.length}</span>}
+      </div>
 
       {loading ? (
-        <p className="text-slate-400 text-sm">Loading...</p>
+        <p className="body-sm">Loading…</p>
       ) : entries.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl">
-          <p className="text-slate-400">No entries yet. Write about your day above! 📔</p>
-        </div>
+        <div className="empty-panel">Nothing written yet. Begin above.</div>
       ) : (
-        <div className="space-y-4">
-          {entries.map((entry) => (
-            <div key={entry._id} className="bg-white border border-slate-200 rounded-xl p-5">
-              <div className="flex items-start justify-between mb-2">
-                <span className="text-sm font-semibold text-slate-700">{formatDate(entry.entryDate)}</span>
-                <button
-                  onClick={() => handleDelete(entry._id)}
-                  className="text-slate-300 hover:text-red-500 transition text-lg leading-none"
-                  title="Delete entry"
-                >
-                  ✕
-                </button>
-              </div>
-              <p className="text-sm text-slate-700 whitespace-pre-wrap">{entry.content}</p>
-              {entry.extractedTaskCount > 0 && (
-                <p className="mt-3 text-xs text-indigo-600 bg-indigo-50 inline-block px-2 py-1 rounded-full">
-                  ✨ {entry.extractedTaskCount} task(s) extracted
+        <div className="entry-list space-y-4 animate-rise delay-2">
+          {entries.map((entry) => {
+            const isOpen = expanded[entry._id];
+            const isLong = entry.content.length > 260;
+
+            return (
+              <div key={entry._id} className="entry-card">
+                <div className="flex items-baseline justify-between gap-3 mb-3">
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="entry-date truncate">{formatDate(entry.entryDate)}</span>
+                    <span className="entry-relative">{relativeDay(entry.entryDate)}</span>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(entry._id)}
+                    className="btn-delete"
+                    title="Remove"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <p className={`entry-body ${isLong && !isOpen ? 'entry-clamped' : ''}`}>
+                  {entry.content}
                 </p>
-              )}
-            </div>
-          ))}
+
+                {isLong && (
+                  <button
+                    onClick={() =>
+                      setExpanded((prev) => ({ ...prev, [entry._id]: !prev[entry._id] }))
+                    }
+                    className="entry-more block"
+                  >
+                    {isOpen ? 'Show less' : 'Read more'}
+                  </button>
+                )}
+
+                {entry.extractedTaskCount > 0 && (
+                  <div className="mt-4">
+                    <span className="extract-chip">
+                      ✦ {entry.extractedTaskCount} task
+                      {entry.extractedTaskCount > 1 ? 's' : ''} drawn out
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
