@@ -1,0 +1,102 @@
+/* ===== DASHBOARD ===== */
+
+@layer components {
+  .chart-card {
+    background: linear-gradient(160deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    border: 1px solid var(--border-subtle);
+    border-radius: 1.25rem;
+    padding: 1.4rem;
+    box-shadow: var(--shadow-soft);
+    transition: border-color 0.4s var(--ease);
+  }
+  .chart-card:hover { border-color: var(--border-hover); }
+
+  /* recharts overrides for dark theme */
+  .recharts-cartesian-axis-tick text {
+    fill: var(--text-faint) !important;
+    font-size: 11px;
+  }
+  .recharts-legend-item-text {
+    color: var(--text-muted) !important;
+    font-size: 12px;
+  }
+  .recharts-default-tooltip {
+    background: rgba(20, 16, 31, 0.95) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6) !important;
+    padding: 0.6rem 0.9rem !important;
+  }
+  .recharts-tooltip-label {
+    color: var(--text-display) !important;
+    font-size: 0.8rem !important;
+    margin-bottom: 0.2rem !important;
+  }
+  .recharts-tooltip-item {
+    color: var(--text-body) !important;
+    font-size: 0.78rem !important;
+  }
+  .recharts-pie-label-text {
+    fill: var(--text-muted) !important;
+    font-size: 11px;
+  }
+
+  /* metric tiles */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  @media (min-width: 640px) {
+    .metric-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  .metric {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    border: 1px solid var(--border-subtle);
+    border-radius: 1.15rem;
+    padding: 1.2rem 1rem;
+    text-align: center;
+    transition: all 0.4s var(--ease);
+  }
+  .metric:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+  }
+  .metric::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.4;
+  }
+
+  .metric-value {
+    font-family: 'Fraunces', serif;
+    font-size: 1.85rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--gold);
+  }
+
+  .metric-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-faint);
+    margin-top: 0.5rem;
+  }
+
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  @media (min-width: 768px) {
+    .chart-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+}

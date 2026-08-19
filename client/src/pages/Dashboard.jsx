@@ -4,17 +4,22 @@ import {
   PieChart, Pie, Cell, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer,
 } from 'recharts';
+import '../styles/dashboard.css';
 
-function StatCard({ label, value, accent }) {
+const PRIORITY_COLORS = {
+  low: '#8fbf9f',
+  medium: '#d4af7a',
+  high: '#c98b8b',
+};
+
+function Metric({ value, label }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5">
-      <div className={`text-3xl font-bold ${accent}`}>{value}</div>
-      <div className="text-sm text-slate-500 mt-1">{label}</div>
+    <div className="metric">
+      <div className="metric-value">{value}</div>
+      <div className="metric-label">{label}</div>
     </div>
   );
 }
-
-const PRIORITY_COLORS = { low: '#22c55e', medium: '#eab308', high: '#ef4444' };
 
 function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -27,7 +32,7 @@ function Dashboard() {
         const res = await api.get('/analytics');
         setStats(res.data);
       } catch (err) {
-        setError('Could not load analytics.');
+        setError('Could not load your figures.');
         console.error(err);
       } finally {
         setLoading(false);
@@ -37,12 +42,12 @@ function Dashboard() {
   }, []);
 
   if (loading) {
-    return <p className="text-slate-400 text-sm">Loading your dashboard...</p>;
+    return <p className="body-sm max-w-4xl mx-auto">Gathering your figures…</p>;
   }
 
   if (error) {
     return (
-      <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+      <p className="body-sm max-w-4xl mx-auto" style={{ color: 'var(--rose)' }}>
         {error}
       </p>
     );
@@ -65,69 +70,99 @@ function Dashboard() {
     { name: 'Pending', count: stats.tasks.pending },
   ];
 
+  const verdict = (() => {
+    if (completionRate >= 80) return 'You finish what you start. That is rarer than it sounds.';
+    if (completionRate >= 50) return 'Steady. More done than not.';
+    if (completionRate > 0) return 'Plenty in motion. Worth closing a few loops.';
+    return 'Early days. The numbers will come.';
+  })();
+
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-900 mb-1">Dashboard 📊</h1>
-      <p className="text-slate-500 text-sm mb-6">Here's how you're doing.</p>
+    <div className="max-w-4xl mx-auto relative z-10">
+      {/* Header */}
+      <div className="animate-rise mb-6">
+        <p className="eyebrow mb-2">The record</p>
+        <h1 className="display-lg">Your figures</h1>
+        <p className="body-text mt-1">{hasNoData ? 'Nothing measured yet.' : verdict}</p>
+      </div>
 
-      {hasNoData && (
-        <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-5 mb-6">
-          <p className="text-sm text-indigo-800">
-            📭 No data yet! Add some tasks and habits, and your stats will appear here.
-          </p>
+      {hasNoData ? (
+        <div className="empty-panel animate-rise delay-1">
+          Add a few tasks and rituals — your figures will appear here.
         </div>
+      ) : (
+        <>
+          {/* Metrics */}
+          <div className="metric-grid animate-rise delay-1 mb-4">
+            <Metric value={stats.tasks.total} label="Total" />
+            <Metric value={stats.tasks.completed} label="Completed" />
+            <Metric value={stats.tasks.pending} label="Open" />
+            <Metric value={`${completionRate}%`} label="Rate" />
+          </div>
+
+          {/* Charts */}
+          <div className="chart-grid animate-rise delay-2 mb-8">
+            <div className="chart-card">
+              <p className="eyebrow mb-3">By priority</p>
+              {priorityData.length === 0 ? (
+                <p className="lux-empty">Nothing to chart.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={230}>
+                  <PieChart>
+                    <Pie
+                      data={priorityData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={45}
+                      outerRadius={78}
+                      paddingAngle={3}
+                      stroke="none"
+                    >
+                      {priorityData.map((entry) => (
+                        <Cell
+                          key={entry.name}
+                          fill={PRIORITY_COLORS[entry.name] || '#6b4d8f'}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            <div className="chart-card">
+              <p className="eyebrow mb-3">Completed vs open</p>
+              <ResponsiveContainer width="100%" height={230}>
+                <BarChart data={statusData} barSize={44}>
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} axisLine={false} tickLine={false} width={28} />
+                  <Tooltip cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                  <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                    {statusData.map((entry, i) => (
+                      <Cell key={i} fill={i === 0 ? '#d4af7a' : '#6b4d8f'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Rituals */}
+          <div className="group-head">
+            <h2 className="display-md" style={{ fontSize: '1.05rem' }}>
+              Rituals
+            </h2>
+          </div>
+
+          <div className="metric-grid animate-rise delay-3" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            <Metric value={stats.habits.total} label="Tracked" />
+            <Metric value={stats.habits.bestStreak} label="Best streak" />
+            <Metric value={stats.habits.totalCheckIns} label="Check-ins" />
+          </div>
+        </>
       )}
-
-      {/* Task stats */}
-      <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">Tasks</h2>
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 mb-8">
-        <StatCard label="Total tasks" value={stats.tasks.total} accent="text-indigo-600" />
-        <StatCard label="Completed" value={stats.tasks.completed} accent="text-green-600" />
-        <StatCard label="Pending" value={stats.tasks.pending} accent="text-amber-500" />
-        <StatCard label="Completion rate" value={`${completionRate}%`} accent="text-purple-600" />
-      </div>
-
-      {/* Charts */}
-      <div className="grid gap-4 md:grid-cols-2 mb-8">
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-2">Tasks by Priority</h3>
-          {priorityData.length === 0 ? (
-            <p className="text-slate-400 text-sm py-12 text-center">No tasks yet.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={240}>
-              <PieChart>
-                <Pie data={priorityData} dataKey="value" nameKey="name" outerRadius={80} label>
-                  {priorityData.map((entry) => (
-                    <Cell key={entry.name} fill={PRIORITY_COLORS[entry.name] || '#94a3b8'} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-2">Completed vs Pending</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={statusData}>
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Habit stats */}
-      <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">Habits</h2>
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-        <StatCard label="Total habits" value={stats.habits.total} accent="text-indigo-600" />
-        <StatCard label="Best streak 🔥" value={stats.habits.bestStreak} accent="text-orange-500" />
-        <StatCard label="Total check-ins" value={stats.habits.totalCheckIns} accent="text-green-600" />
-      </div>
     </div>
   );
 }
