@@ -35,11 +35,15 @@ function Login() {
   return (
     <div className="flex justify-center pt-10 relative z-10">
       <div className="surface w-full max-w-md p-8 animate-rise">
-        <p className="eyebrow mb-2">Welcome back</p>
-        <h1 className="display-lg mb-1" style={{ fontSize: '1.9rem' }}>
-          Sign in
-        </h1>
-        <p className="body-sm mb-7">Your day is waiting.</p>
+        <div className="flex flex-col items-center mb-7">
+          <img
+            src="/logo.png"
+            alt="Aegis"
+            className="w-36 h-36 object-contain mb-3"
+            style={{ mixBlendMode: 'lighten' }}
+          />
+          <p className="body-sm">Your day is waiting.</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

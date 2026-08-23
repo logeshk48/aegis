@@ -32,13 +32,15 @@ function Signup() {
   return (
     <div className="flex justify-center pt-10 relative z-10">
       <div className="surface w-full max-w-md p-8 animate-rise">
-        <p className="eyebrow mb-2">Begin</p>
-        <h1 className="display-lg mb-1" style={{ fontSize: '1.9rem' }}>
-          Create your Aegis
-        </h1>
-        <p className="body-sm mb-7">
-          A quiet place to keep what matters.
-        </p>
+        <div className="flex flex-col items-center mb-7">
+          <img
+            src="/logo.png"
+            alt="Aegis"
+            className="w-36 h-36 object-contain mb-3"
+            style={{ mixBlendMode: 'lighten' }}
+          />
+          <p className="body-sm">A quiet place to keep what matters.</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
