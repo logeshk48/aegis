@@ -21,12 +21,12 @@ function Login() {
       localStorage.setItem('accessToken', res.data.accessToken);
       localStorage.setItem('userName', res.data.user.name);
 
-      setMessage('✅ Logged in! Redirecting...');
-      setTimeout(() => navigate('/'), 1000);
+      setMessage('Welcome back.');
+      setTimeout(() => navigate('/'), 800);
     } catch (err) {
       const errorMsg =
         err.response?.data?.message || 'Something went wrong. Try again.';
-      setMessage('❌ ' + errorMsg);
+      setMessage(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -34,50 +34,64 @@ function Login() {
 
   return (
     <div className="flex justify-center pt-10 relative z-10">
-      <div className="glass w-full max-w-md p-8">
-        <h1 className="heading-xl mb-1">Welcome back</h1>
-        <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-          Log in to your Aegis account.
-        </p>
+      <div className="surface w-full max-w-md p-8 animate-rise">
+        <p className="eyebrow mb-2">Welcome back</p>
+        <h1 className="display-lg mb-1" style={{ fontSize: '1.9rem' }}>
+          Sign in
+        </h1>
+        <p className="body-sm mb-7">Your day is waiting.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="tile-label block mb-2">Email</label>
+            <label className="eyebrow block mb-2" style={{ color: 'var(--text-muted)' }}>
+              Email
+            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="input-glass"
+              className="input-lux"
             />
           </div>
 
           <div>
-            <label className="tile-label block mb-2">Password</label>
+            <label className="eyebrow block mb-2" style={{ color: 'var(--text-muted)' }}>
+              Password
+            </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Your password"
-              className="input-glass"
+              className="input-lux"
             />
           </div>
 
-          <button type="submit" disabled={loading} className="btn-sand w-full">
-            {loading ? 'Logging in...' : 'Log In'}
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-gold w-full"
+            style={{ marginTop: '1.5rem' }}
+          >
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 
         {message && (
-          <p className="mt-4 text-sm text-center" style={{ color: 'var(--text-muted)' }}>
+          <p className="body-sm mt-4 text-center" style={{ color: 'var(--gold)' }}>
             {message}
           </p>
         )}
 
-        <p className="mt-6 text-sm text-center" style={{ color: 'var(--text-muted)' }}>
-          Don't have an account?{' '}
-          <Link to="/signup" className="font-semibold hover:underline" style={{ color: 'var(--sand)' }}>
-            Sign up
+        <p className="body-sm mt-7 text-center">
+          New here?{' '}
+          <Link
+            to="/signup"
+            className="font-semibold hover:underline"
+            style={{ color: 'var(--gold)' }}
+          >
+            Create an account
           </Link>
         </p>
       </div>
