@@ -1,0 +1,94 @@
+/* ===== MEMORY ===== */
+
+@layer components {
+  .mem-cat-identity { --mem: #d4af7a; }
+  .mem-cat-pattern { --mem: #9b8fc4; }
+  .mem-cat-preference { --mem: #8fbf9f; }
+  .mem-cat-goal { --mem: #e8c99b; }
+  .mem-cat-struggle { --mem: #c98b8b; }
+
+  .mem-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.95rem 1.1rem;
+    border-radius: 1rem;
+    background: linear-gradient(160deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    border: 1px solid var(--border-subtle);
+    border-left: 2px solid var(--mem, var(--border-subtle));
+    transition: all 0.4s var(--ease);
+  }
+  .mem-card:hover { border-color: var(--border-hover); }
+
+  .mem-text {
+    flex: 1;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-display);
+    min-width: 0;
+  }
+
+  .mem-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.4rem;
+  }
+
+  .mem-badge {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--mem);
+  }
+
+  .mem-note {
+    font-size: 0.65rem;
+    color: var(--text-faint);
+  }
+
+  .mem-edit {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--gold);
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.7rem;
+    color: var(--text-display);
+    font-size: 0.875rem;
+    outline: none;
+  }
+
+  /* category filter row */
+  .mem-filter {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    color: var(--text-muted);
+    border: 1px solid transparent;
+    transition: all 0.3s var(--ease);
+  }
+  .mem-filter:hover { color: var(--text-display); }
+  .mem-filter-active {
+    background: rgba(212, 175, 122, 0.1);
+    color: var(--gold);
+    border-color: rgba(212, 175, 122, 0.25);
+  }
+
+  /* confidence bar */
+  .conf-track {
+    width: 34px;
+    height: 2px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .conf-fill {
+    height: 100%;
+    background: var(--mem, var(--gold));
+    border-radius: 999px;
+    transition: width 0.6s var(--ease);
+  }
+}

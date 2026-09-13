@@ -1,5 +1,13 @@
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Home as HomeIcon, CheckSquare, Flame, BarChart3, BookOpen, LogOut } from 'lucide-react';
+import {
+  Home as HomeIcon,
+  CheckSquare,
+  Flame,
+  BookOpen,
+  Brain,
+  BarChart3,
+  LogOut,
+} from 'lucide-react';
 import Home from './pages/Home';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
@@ -7,6 +15,7 @@ import Tasks from './pages/Tasks';
 import Habits from './pages/Habits';
 import Dashboard from './pages/Dashboard';
 import Diary from './pages/Diary';
+import Memory from './pages/Memory';
 import ProtectedRoute from './components/ProtectedRoute';
 import { logout } from './utils/auth';
 
@@ -27,6 +36,7 @@ function PillNav() {
     { to: '/tasks', label: 'Tasks', icon: CheckSquare },
     { to: '/habits', label: 'Habits', icon: Flame },
     { to: '/diary', label: 'Diary', icon: BookOpen },
+    { to: '/memory', label: 'Memory', icon: Brain },
     { to: '/dashboard', label: 'Stats', icon: BarChart3 },
   ];
 
@@ -49,20 +59,20 @@ function PillNav() {
             <Link
               key={item.to}
               to={item.to}
-              className="flex items-center gap-2 rounded-full px-2.5 py-2 sm:px-3 sm:py-2.5"
+              className="flex items-center gap-2 rounded-full px-2 py-2 sm:px-2.5 sm:py-2.5"
               style={{
                 transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                 ...(active
                   ? {
                       background: 'var(--gradient-gold)',
                       color: '#14101f',
-                      paddingLeft: '1rem',
-                      paddingRight: '1rem',
+                      paddingLeft: '0.9rem',
+                      paddingRight: '0.9rem',
                     }
                   : { color: 'var(--text-muted)' }),
               }}
             >
-              <Icon size={19} strokeWidth={2} />
+              <Icon size={18} strokeWidth={2} />
               {active && <span className="text-sm font-semibold">{item.label}</span>}
             </Link>
           );
@@ -72,11 +82,11 @@ function PillNav() {
 
         <button
           onClick={handleLogout}
-          className="flex items-center rounded-full px-2.5 py-2 sm:px-3 sm:py-2.5"
+          className="flex items-center rounded-full px-2 py-2 sm:px-2.5 sm:py-2.5"
           style={{ color: 'var(--text-muted)', transition: 'color 0.3s' }}
           title="Logout"
         >
-          <LogOut size={19} strokeWidth={2} />
+          <LogOut size={18} strokeWidth={2} />
         </button>
       </nav>
     </div>
@@ -105,6 +115,7 @@ function App() {
           <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
           <Route path="/habits" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
           <Route path="/diary" element={<ProtectedRoute><Diary /></ProtectedRoute>} />
+          <Route path="/memory" element={<ProtectedRoute><Memory /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
