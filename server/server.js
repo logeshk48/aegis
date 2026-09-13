@@ -13,13 +13,14 @@ const aiRoutes = require('./routes/aiRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const digestRoutes = require('./routes/digestRoutes');
 const diaryRoutes = require('./routes/diaryRoutes');
+const memoryRoutes = require('./routes/memoryRoutes');
 
 const app = express();
 
 // allowed frontend origins (local dev + live site)
 const allowedOrigins = [
   'http://localhost:5173',
-  process.env.CLIENT_URL, // our live frontend URL
+  process.env.CLIENT_URL,
 ];
 
 app.use(cors({
@@ -42,7 +43,7 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB');
-    startDigestJob(); // start the scheduled daily digest job
+    startDigestJob();
   })
   .catch((err) => console.error('❌ MongoDB connection error:', err.message));
 
@@ -54,6 +55,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/digest', digestRoutes);
 app.use('/api/diary', diaryRoutes);
+app.use('/api/memories', memoryRoutes);
 
 // health check route
 app.get('/api/health', (req, res) => {
