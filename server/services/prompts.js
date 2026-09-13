@@ -66,4 +66,52 @@ ${context}
 Your suggestions (JSON array):`;
 };
 
-module.exports = { buildTaskParsePrompt, buildQuestionPrompt, buildSuggestionsPrompt };
+// builds the prompt for extracting durable facts about the user
+const buildMemoryExtractionPrompt = (newText, existingMemories) => {
+  const known =
+    existingMemories.length > 0
+      ? existingMemories.map((m) => `- ${m.content}`).join('\n')
+      : '(nothing known yet)';
+
+  return `You are the memory system of a personal assistant. Read the user's new writing below and extract durable facts worth remembering about them as a person.
+
+WHAT COUNTS AS A MEMORY:
+- identity: who they are, their situation, what they're working on
+- pattern: recurring behaviour ("often works late", "skips gym on weekends")
+- preference: how they like things ("prefers short replies", "hates mornings")
+- goal: what they are working toward
+- struggle: what they find difficult
+
+WHAT DOES NOT COUNT:
+- One-off events ("went to the shop today") — that's a diary entry, not a memory
+- Tasks or to-dos — those are stored separately
+- Anything already in the known list below
+- Speculation. Only extract what is clearly stated or strongly implied.
+
+ALREADY KNOWN ABOUT THIS USER:
+${known}
+
+Return ONLY a valid JSON array (no markdown, no code fences). Each item:
+- "content": one short sentence in third person, e.g. "Struggles to wake up early"
+- "category": one of "identity", "pattern", "preference", "goal", "struggle"
+
+Rules:
+- Return 0 to 3 items. Quality over quantity. An empty array [] is a valid and common answer.
+- Do NOT repeat anything in the known list, even reworded.
+- Write each memory so it would still make sense read a year from now.
+- Return ONLY the JSON array.
+
+USER'S NEW WRITING:
+"""
+${newText}
+"""
+
+Extracted memories (JSON array):`;
+};
+
+module.exports = {
+  buildTaskParsePrompt,
+  buildQuestionPrompt,
+  buildSuggestionsPrompt,
+  buildMemoryExtractionPrompt,
+};

@@ -11,7 +11,7 @@ const askAI = async (prompt) => {
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   const completion = await groq.chat.completions.create({
     messages: [{ role: 'user', content: prompt }],
-    model: 'openai/gpt-oss-20b',
+    model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
   });
   return completion.choices[0].message.content;
 };
@@ -91,11 +91,8 @@ const answerUserQuestion = async (userId, question) => {
 
 // generate personalized habit/task suggestions from the user's data (RAG)
 const generateSuggestions = async (userId) => {
-  // 1. RETRIEVE: gather everything we know about the user
   const context = await buildUserContext(userId);
-  // 2. AUGMENT: build the suggestions prompt around it
   const prompt = buildSuggestionsPrompt(context);
-  // 3. GENERATE
   const rawReply = await askAI(prompt);
 
   const cleaned = cleanJsonString(rawReply);
@@ -104,7 +101,6 @@ const generateSuggestions = async (userId) => {
   try {
     parsed = JSON.parse(cleaned);
   } catch (err) {
-    // if the AI didn't return valid JSON, return nothing rather than crashing
     console.error('Suggestions JSON parse failed:', err.message);
     return [];
   }
@@ -114,11 +110,12 @@ const generateSuggestions = async (userId) => {
   return parsed
     .map(validateSuggestion)
     .filter((s) => s !== null)
-    .slice(0, 4); // cap at 4
+    .slice(0, 4);
 };
 
 module.exports = {
   askAI,
+  cleanJsonString,
   parseTasksFromText,
   answerUserQuestion,
   generateSuggestions,
