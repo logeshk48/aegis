@@ -1,11 +1,12 @@
 const DiaryEntry = require('../models/DiaryEntry');
 const Task = require('../models/Task');
 const { parseTasksFromText } = require('../services/aiService');
+const { extractAndStoreMemories } = require('../services/memoryService');
 
 // helper: today's date as YYYY-MM-DD
 const getToday = () => new Date().toISOString().split('T')[0];
 
-// @desc   Create a diary entry (and auto-extract tasks from it)
+// @desc   Create a diary entry (auto-extracts tasks and memories)
 // @route  POST /api/diary
 // @access Protected
 const createEntry = async (req, res) => {
@@ -16,7 +17,7 @@ const createEntry = async (req, res) => {
       return res.status(400).json({ message: 'Diary content is required' });
     }
 
-    // extract tasks from the diary text using the AI (reusing existing function)
+    // --- extract tasks (non-critical, fails soft) ---
     let createdTasks = [];
     try {
       const parsedTasks = await parseTasksFromText(content);
@@ -30,11 +31,10 @@ const createEntry = async (req, res) => {
         createdTasks = await Task.insertMany(tasksToCreate);
       }
     } catch (aiErr) {
-      // if AI extraction fails, we still save the diary entry — it's not critical
       console.error('Task extraction failed (entry still saved):', aiErr.message);
     }
 
-    // save the diary entry, recording how many tasks were extracted
+    // --- save the entry ---
     const entry = await DiaryEntry.create({
       user: req.user._id,
       content: content.trim(),
@@ -42,13 +42,30 @@ const createEntry = async (req, res) => {
       extractedTaskCount: createdTasks.length,
     });
 
+    // --- learn about the user (non-critical, fails soft) ---
+    let learned = [];
+    try {
+      learned = await extractAndStoreMemories(req.user._id, content, 'diary');
+    } catch (memErr) {
+      console.error('Memory extraction failed (entry still saved):', memErr.message);
+    }
+
+    // --- compose the response message ---
+    const parts = [];
+    if (createdTasks.length > 0) {
+      parts.push(`${createdTasks.length} task${createdTasks.length > 1 ? 's' : ''} drawn out`);
+    }
+    if (learned.length > 0) {
+      parts.push(`${learned.length} thing${learned.length > 1 ? 's' : ''} learned about you`);
+    }
+
+    const message = parts.length > 0 ? `Kept — ${parts.join(', ')}.` : 'Kept.';
+
     res.status(201).json({
       entry,
       extractedTasks: createdTasks,
-      message:
-        createdTasks.length > 0
-          ? `Saved your entry and found ${createdTasks.length} task(s).`
-          : 'Saved your entry.',
+      learnedMemories: learned,
+      message,
     });
   } catch (error) {
     res.status(500).json({ message: 'Could not save entry', error: error.message });
@@ -60,7 +77,10 @@ const createEntry = async (req, res) => {
 // @access Protected
 const getEntries = async (req, res) => {
   try {
-    const entries = await DiaryEntry.find({ user: req.user._id }).sort({ entryDate: -1, createdAt: -1 });
+    const entries = await DiaryEntry.find({ user: req.user._id }).sort({
+      entryDate: -1,
+      createdAt: -1,
+    });
     res.status(200).json(entries);
   } catch (error) {
     res.status(500).json({ message: 'Could not load entries', error: error.message });
