@@ -1,6 +1,9 @@
 const Task = require('../models/Task');
 const Habit = require('../models/Habit');
 const DiaryEntry = require('../models/DiaryEntry');
+const { askAI, cleanJsonString } = require('./aiService');
+const { buildUserContext } = require('./contextService');
+const { buildDriftPrompt } = require('./prompts');
 
 const DAY = 86400000;
 const dateStr = (d) => new Date(d).toISOString().split('T')[0];
@@ -8,18 +11,16 @@ const daysAgo = (n) => new Date(Date.now() - n * DAY);
 
 // ---------- individual signals ----------
 
-// what fraction of tasks due in a window were completed
 const taskCompletion = (tasks, from, to) => {
   const inWindow = tasks.filter((t) => {
     const created = new Date(t.createdAt);
     return created >= from && created <= to;
   });
-  if (inWindow.length === 0) return null; // no data ≠ bad performance
+  if (inWindow.length === 0) return null;
   const done = inWindow.filter((t) => t.completed).length;
   return done / inWindow.length;
 };
 
-// what fraction of expected habit check-ins actually happened
 const habitConsistency = (habits, from, to) => {
   if (habits.length === 0) return null;
 
@@ -29,7 +30,6 @@ const habitConsistency = (habits, from, to) => {
 
   for (const h of habits) {
     const created = new Date(h.createdAt);
-    // only count days after the habit existed
     const activeDays = Math.max(
       0,
       Math.min(days, Math.round((to - Math.max(from, created)) / DAY))
@@ -47,7 +47,6 @@ const habitConsistency = (habits, from, to) => {
   return Math.min(1, actual / expected);
 };
 
-// fraction of days in the window that have a diary entry
 const diaryEngagement = (entries, from, to) => {
   const days = Math.max(1, Math.round((to - from) / DAY));
   const written = new Set(
@@ -63,10 +62,6 @@ const diaryEngagement = (entries, from, to) => {
 
 // ---------- the main calculation ----------
 
-/**
- * Compares the last 7 days against the previous 30-day baseline.
- * Returns a structured diagnosis with per-signal deltas.
- */
 const calculateDrift = async (userId) => {
   const now = new Date();
   const recentFrom = daysAgo(7);
@@ -79,13 +74,13 @@ const calculateDrift = async (userId) => {
     DiaryEntry.find({ user: userId }),
   ]);
 
-  // not enough history to judge anything
   const accountAge = tasks.length + habits.length + entries.length;
   if (accountAge < 5) {
     return {
       state: 'unknown',
       score: 0,
       signals: [],
+      overdue: 0,
       summary: 'Not enough history yet to know your normal.',
       hasEnoughData: false,
     };
@@ -117,7 +112,7 @@ const calculateDrift = async (userId) => {
   for (const p of pairs) {
     if (p.recent === null || p.baseline === null || p.baseline === 0) continue;
 
-    const delta = (p.recent - p.baseline) / p.baseline; // negative = worse
+    const delta = (p.recent - p.baseline) / p.baseline;
     signals.push({
       key: p.key,
       label: p.label,
@@ -128,13 +123,10 @@ const calculateDrift = async (userId) => {
     });
   }
 
-  // overdue is absolute, not relative — treated separately
   const overdue = tasks.filter(
     (t) => !t.completed && t.dueDate && dateStr(t.dueDate) < dateStr(now)
   ).length;
 
-  // ---------- scoring ----------
-  // each signal down by >10% adds weight; overdue adds its own
   let score = 0;
   for (const s of signals) {
     if (s.direction === 'down') {
@@ -167,4 +159,67 @@ const calculateDrift = async (userId) => {
   };
 };
 
-module.exports = { calculateDrift };
+// ---------- AI interpretation ----------
+
+const FALLBACKS = {
+  steady: {
+    headline: 'You are holding steady.',
+    explanation: 'Your patterns look close to normal. Nothing needs fixing right now.',
+    plan: [{ step: 'Carry on as you are', why: 'It is working' }],
+    tone: 'calm',
+  },
+  unknown: {
+    headline: 'Still learning your rhythm.',
+    explanation:
+      'There is not enough history yet to know what normal looks like for you. Keep using Aegis and this will sharpen.',
+    plan: [{ step: 'Write a diary entry tonight', why: 'It is how Aegis learns you' }],
+    tone: 'calm',
+  },
+};
+
+const validatePlan = (plan) => {
+  if (!Array.isArray(plan)) return [];
+  return plan
+    .filter((p) => p && typeof p.step === 'string' && p.step.trim())
+    .map((p) => ({
+      step: p.step.trim(),
+      why: typeof p.why === 'string' ? p.why.trim() : '',
+    }))
+    .slice(0, 4);
+};
+
+const getDriftReport = async (userId) => {
+  const drift = await calculateDrift(userId);
+
+  if (!drift.hasEnoughData) {
+    return { ...drift, ...FALLBACKS.unknown };
+  }
+
+  try {
+    const context = await buildUserContext(userId);
+    const prompt = buildDriftPrompt(drift, context);
+    const raw = await askAI(prompt);
+    const cleaned = cleanJsonString(raw);
+
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      ...drift,
+      headline:
+        typeof parsed.headline === 'string' && parsed.headline.trim()
+          ? parsed.headline.trim()
+          : FALLBACKS.steady.headline,
+      explanation:
+        typeof parsed.explanation === 'string' ? parsed.explanation.trim() : '',
+      plan: validatePlan(parsed.plan),
+      tone: ['calm', 'encouraging', 'gentle', 'celebratory'].includes(parsed.tone)
+        ? parsed.tone
+        : 'calm',
+    };
+  } catch (err) {
+    console.error('Drift interpretation failed:', err.message);
+    return { ...drift, ...(FALLBACKS[drift.state] || FALLBACKS.steady) };
+  }
+};
+
+module.exports = { calculateDrift, getDriftReport };

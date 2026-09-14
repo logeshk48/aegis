@@ -14,10 +14,10 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const digestRoutes = require('./routes/digestRoutes');
 const diaryRoutes = require('./routes/diaryRoutes');
 const memoryRoutes = require('./routes/memoryRoutes');
+const driftRoutes = require('./routes/driftRoutes');
 
 const app = express();
 
-// allowed frontend origins (local dev + live site)
 const allowedOrigins = [
   'http://localhost:5173',
   process.env.CLIENT_URL,
@@ -25,7 +25,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like Thunder Client) or from allowed list
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -38,7 +37,6 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// connect to MongoDB, then start scheduled jobs
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
@@ -56,8 +54,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/digest', digestRoutes);
 app.use('/api/diary', diaryRoutes);
 app.use('/api/memories', memoryRoutes);
+app.use('/api/drift', driftRoutes);
 
-// health check route
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Hello from your server! 🚀' });
 });

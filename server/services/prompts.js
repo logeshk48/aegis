@@ -24,6 +24,7 @@ IMPORTANT RULES:
 - Answer ONLY from the data given. Do not invent or assume anything.
 - If the data doesn't contain the answer, say so honestly (e.g. "I don't have a record of that").
 - Be concise and friendly — 1 to 3 sentences.
+- Speak to them as "you", never mix in "I" as if you were them.
 - When mentioning dates, write them naturally (e.g. "July 14" instead of "2026-07-14").
 - Do not list all the data back; just answer what was asked.
 
@@ -109,9 +110,60 @@ ${newText}
 Extracted memories (JSON array):`;
 };
 
+// builds the prompt that turns a drift diagnosis into a personal explanation + plan
+const buildDriftPrompt = (drift, context) => {
+  const signalLines = drift.signals
+    .map(
+      (s) =>
+        `- ${s.label}: ${s.recent}% recently vs ${s.baseline}% normally (${
+          s.changePct > 0 ? '+' : ''
+        }${s.changePct}%)`
+    )
+    .join('\n');
+
+  return `You are Aegis — a personal guardian who knows this person well. You have detected a change in their patterns. Explain it to them and give them a way back.
+
+THEIR CURRENT STATE: ${drift.state.toUpperCase()} (drift score ${drift.score}/100)
+
+MEASURED SIGNALS:
+${signalLines || '(no comparable signals)'}
+${drift.overdue > 0 ? `- ${drift.overdue} task(s) currently overdue` : ''}
+
+--- WHAT YOU KNOW ABOUT THEM ---
+${context}
+--- END ---
+
+Return ONLY a valid JSON object (no markdown, no code fences) with these fields:
+
+{
+  "headline": "One short sentence naming their state. Direct, never clinical.",
+  "explanation": "2-3 sentences explaining WHY, connecting the numbers to what you know about them personally. Reference their actual patterns, struggles, or what they've written.",
+  "plan": [
+    { "step": "A specific small action", "why": "One short clause on why this one" }
+  ],
+  "tone": "one of: calm, encouraging, gentle, celebratory"
+}
+
+RULES FOR THE PLAN:
+- 3 to 4 steps. Ordered easiest-first so they get momentum.
+- Scale difficulty to their state: if DRIFTING, make step one almost trivially easy. If STEADY, make steps ambitious.
+- Every step must be doable TODAY, in under an hour.
+- Base steps on their actual tasks, habits and struggles — not generic advice.
+- Never suggest something they already did today.
+
+RULES FOR VOICE:
+- Speak to them as "you". Warm, direct, never preachy or clinical.
+- Do NOT shame. They already know they slipped; your job is the way back.
+- If they are STEADY or RECOVERING, say so plainly and keep the plan light.
+- No emoji. No exclamation marks. Quiet confidence.
+
+Return ONLY the JSON object.`;
+};
+
 module.exports = {
   buildTaskParsePrompt,
   buildQuestionPrompt,
   buildSuggestionsPrompt,
   buildMemoryExtractionPrompt,
+  buildDriftPrompt,
 };
