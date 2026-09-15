@@ -3,6 +3,7 @@ import api from '../api/axios';
 import AskAegis from '../components/AskAegis';
 import Suggestions from '../components/Suggestions';
 import ProgressRing from '../components/ProgressRing';
+import DriftPanel from '../components/DriftPanel';
 import { buildSummary } from '../utils/summary';
 import '../styles/home.css';
 
@@ -71,7 +72,6 @@ function Home() {
     const habit = habits.find((h) => h._id === id);
     if (!habit || isHabitDoneToday(habit)) return;
 
-    // 1. OPTIMISTIC: update the UI immediately
     const optimistic = {
       ...habit,
       streak: (habit.streak || 0) + 1,
@@ -79,12 +79,10 @@ function Home() {
     };
     setHabits((prev) => prev.map((h) => (h._id === id ? optimistic : h)));
 
-    // 2. confirm with the server
     try {
       const res = await api.patch(`/habits/${id}/checkin`);
       setHabits((prev) => prev.map((h) => (h._id === id ? res.data : h)));
     } catch (err) {
-      // 3. ROLLBACK if it failed
       console.error('Check-in failed, reverting:', err);
       setHabits((prev) => prev.map((h) => (h._id === id ? habit : h)));
     }
@@ -98,6 +96,23 @@ function Home() {
       const res = await api.post('/tasks', { title: s.title, priority: 'medium' });
       setTasks((prev) => [res.data, ...prev]);
     }
+  };
+
+  // turn a recovery plan into real tasks due today
+  const handleStartRecovery = async (plan) => {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+
+    const created = [];
+    for (const p of plan) {
+      const res = await api.post('/tasks', {
+        title: p.step,
+        dueDate: today.toISOString(),
+        important: true,
+      });
+      created.push(res.data);
+    }
+    setTasks((prev) => [...created, ...prev]);
   };
 
   const overdueTasks = tasks.filter(isOverdue);
@@ -130,7 +145,7 @@ function Home() {
   return (
     <div className="max-w-4xl mx-auto relative z-10">
       {/* Header */}
-      <div className="animate-rise mb-8">
+      <div className="animate-rise mb-6">
         <p className="eyebrow mb-2">{dateLine}</p>
         <h1 className="display-lg">
           {greeting}, <span className="text-shimmer">{userName}</span>
@@ -147,6 +162,9 @@ function Home() {
           })}
         </p>
       </div>
+
+      {/* Drift diagnosis */}
+      <DriftPanel onStartRecovery={handleStartRecovery} />
 
       {/* Suggestions */}
       <div className="animate-rise delay-1">
