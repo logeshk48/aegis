@@ -2,7 +2,7 @@ const Task = require('../models/Task');
 const Habit = require('../models/Habit');
 const DiaryEntry = require('../models/DiaryEntry');
 const { askAI, cleanJsonString } = require('./aiService');
-const { buildUserContext } = require('./contextService');
+const { buildCompactContext } = require('./contextService');
 const { buildDriftPrompt } = require('./prompts');
 
 const DAY = 86400000;
@@ -81,7 +81,6 @@ const calculateDrift = async (userId) => {
       score: 0,
       signals: [],
       overdue: 0,
-      summary: 'Not enough history yet to know your normal.',
       hasEnoughData: false,
     };
   }
@@ -142,11 +141,12 @@ const calculateDrift = async (userId) => {
 
   const downCount = signals.filter((s) => s.direction === 'down').length;
   const upCount = signals.filter((s) => s.direction === 'up').length;
+  const catastrophic = signals.some((s) => s.changePct <= -75);
 
   let state;
-  if (upCount >= 2 && score < 25) state = 'recovering';
+  if (upCount >= 2 && score < 25 && !catastrophic) state = 'recovering';
   else if (score >= 50 || downCount >= 3) state = 'drifting';
-  else if (score >= 25 || downCount >= 2) state = 'slipping';
+  else if (score >= 25 || downCount >= 2 || catastrophic) state = 'slipping';
   else state = 'steady';
 
   return {
@@ -188,22 +188,37 @@ const validatePlan = (plan) => {
     .slice(0, 4);
 };
 
-const getDriftReport = async (userId) => {
+// in-memory cache: drift doesn't change minute to minute,
+// and recalculating on every page load hammers the AI rate limit
+const driftCache = new Map();
+const CACHE_MS = 60 * 60 * 1000; // 1 hour
+
+const getDriftReport = async (userId, force = false) => {
+  const key = userId.toString();
+
+  if (!force) {
+    const cached = driftCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) {
+      return { ...cached.report, cached: true };
+    }
+  }
+
   const drift = await calculateDrift(userId);
 
   if (!drift.hasEnoughData) {
-    return { ...drift, ...FALLBACKS.unknown };
+    const report = { ...drift, ...FALLBACKS.unknown };
+    driftCache.set(key, { report, expiresAt: Date.now() + CACHE_MS });
+    return report;
   }
 
   try {
-    const context = await buildUserContext(userId);
+    const context = await buildCompactContext(userId);
     const prompt = buildDriftPrompt(drift, context);
     const raw = await askAI(prompt);
     const cleaned = cleanJsonString(raw);
-
     const parsed = JSON.parse(cleaned);
 
-    return {
+    const report = {
       ...drift,
       headline:
         typeof parsed.headline === 'string' && parsed.headline.trim()
@@ -216,8 +231,12 @@ const getDriftReport = async (userId) => {
         ? parsed.tone
         : 'calm',
     };
+
+    driftCache.set(key, { report, expiresAt: Date.now() + CACHE_MS });
+    return report;
   } catch (err) {
     console.error('Drift interpretation failed:', err.message);
+    // don't cache failures — retry next time
     return { ...drift, ...(FALLBACKS[drift.state] || FALLBACKS.steady) };
   }
 };
