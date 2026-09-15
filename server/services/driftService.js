@@ -1,6 +1,7 @@
 const Task = require('../models/Task');
 const Habit = require('../models/Habit');
 const DiaryEntry = require('../models/DiaryEntry');
+const DriftSnapshot = require('../models/DriftSnapshot');
 const { askAI, cleanJsonString } = require('./aiService');
 const { buildCompactContext } = require('./contextService');
 const { buildDriftPrompt } = require('./prompts');
@@ -236,9 +237,88 @@ const getDriftReport = async (userId, force = false) => {
     return report;
   } catch (err) {
     console.error('Drift interpretation failed:', err.message);
-    // don't cache failures — retry next time
     return { ...drift, ...(FALLBACKS[drift.state] || FALLBACKS.steady) };
   }
 };
 
-module.exports = { calculateDrift, getDriftReport };
+// ---------- history ----------
+
+/**
+ * Records today's drift state so we can build a history.
+ * Upserts — one snapshot per day, updated if it runs again.
+ */
+const recordSnapshot = async (userId, report) => {
+  try {
+    if (!report.hasEnoughData) return null;
+
+    const date = new Date().toISOString().split('T')[0];
+
+    const snapshot = await DriftSnapshot.findOneAndUpdate(
+      { user: userId, date },
+      {
+        user: userId,
+        date,
+        state: report.state,
+        score: report.score,
+        signals: report.signals || [],
+        overdue: report.overdue || 0,
+        headline: report.headline || '',
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    return snapshot;
+  } catch (err) {
+    console.error('Snapshot failed:', err.message);
+    return null;
+  }
+};
+
+/**
+ * Returns the last N days of drift history, oldest first.
+ * Days with no snapshot are filled as 'unknown' so the timeline has no holes.
+ */
+const getDriftHistory = async (userId, days = 60) => {
+  const from = new Date(Date.now() - days * DAY).toISOString().split('T')[0];
+
+  const snapshots = await DriftSnapshot.find({
+    user: userId,
+    date: { $gte: from },
+  }).sort({ date: 1 });
+
+  const byDate = new Map(snapshots.map((s) => [s.date, s]));
+
+  const timeline = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(Date.now() - i * DAY).toISOString().split('T')[0];
+    const snap = byDate.get(d);
+    timeline.push({
+      date: d,
+      state: snap ? snap.state : 'unknown',
+      score: snap ? snap.score : null,
+      headline: snap ? snap.headline : '',
+      hasData: !!snap,
+    });
+  }
+
+  // group consecutive same-state days into periods
+  const periods = [];
+  for (const day of timeline) {
+    const last = periods[periods.length - 1];
+    if (last && last.state === day.state) {
+      last.days += 1;
+      last.to = day.date;
+    } else {
+      periods.push({ state: day.state, from: day.date, to: day.date, days: 1 });
+    }
+  }
+
+  return { timeline, periods };
+};
+
+module.exports = {
+  calculateDrift,
+  getDriftReport,
+  recordSnapshot,
+  getDriftHistory,
+};
