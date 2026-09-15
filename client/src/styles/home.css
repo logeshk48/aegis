@@ -350,4 +350,125 @@
     .drift-panel { padding: 1.35rem; }
     .drift-headline { font-size: 1.25rem; }
   }
+    /* ---- life timeline ---- */
+  .timeline-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    padding: 1.75rem;
+    border: 1px solid var(--border-subtle);
+    background: linear-gradient(150deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .ring-stage {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 480px) {
+    .ring-stage { width: 220px; height: 220px; }
+  }
+
+  .ring-seg {
+    transition: opacity 0.3s var(--ease), stroke-width 0.3s var(--ease);
+    cursor: pointer;
+  }
+  .ring-seg:hover { opacity: 1 !important; stroke-width: 16 !important; }
+
+  .ring-core {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    pointer-events: none;
+    padding: 0 3.2rem;
+  }
+
+  .core-state {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-display);
+    line-height: 1.2;
+  }
+
+  .core-sub {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--text-faint);
+    margin-top: 0.4rem;
+  }
+
+  .core-date {
+    font-size: 0.65rem;
+    color: var(--gold);
+    margin-top: 0.3rem;
+  }
+
+  /* legend */
+  .tl-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.9rem;
+    margin-top: 1.25rem;
+  }
+
+  .tl-key {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  .tl-swatch {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  /* period chips */
+  .period-strip {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding: 0.25rem 0 0.5rem;
+    scrollbar-width: none;
+    margin-top: 1.25rem;
+  }
+  .period-strip::-webkit-scrollbar { display: none; }
+
+  .period-chip {
+    flex-shrink: 0;
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-subtle);
+    border-left: 2px solid var(--pstate);
+    min-width: 0;
+  }
+
+  .period-state {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--pstate);
+  }
+
+  .period-days {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    margin-top: 0.15rem;
+    white-space: nowrap;
+  }
 }

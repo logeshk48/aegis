@@ -4,6 +4,7 @@ import AskAegis from '../components/AskAegis';
 import Suggestions from '../components/Suggestions';
 import ProgressRing from '../components/ProgressRing';
 import DriftPanel from '../components/DriftPanel';
+import LifeTimeline from '../components/LifeTimeline';
 import { buildSummary } from '../utils/summary';
 import '../styles/home.css';
 
@@ -295,6 +296,11 @@ function Home() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Life timeline */}
+      <div className="animate-rise delay-4">
+        <LifeTimeline />
       </div>
 
       {/* Ask Aegis */}

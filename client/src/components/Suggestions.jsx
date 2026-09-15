@@ -19,7 +19,11 @@ function Suggestions({ onAccept }) {
         setLoading(false);
       }
     };
-    fetchSuggestions();
+
+    // stagger behind the drift call — both at once exceeds
+    // the provider's tokens-per-minute limit
+    const timer = setTimeout(fetchSuggestions, 4000);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleAccept = async (suggestion, index) => {
@@ -68,7 +72,11 @@ function Suggestions({ onAccept }) {
     return message ? (
       <div className="mb-6 flex items-center gap-3">
         <p className="body-sm" style={{ color: 'var(--gold)' }}>{message}</p>
-        <button onClick={handleRefresh} className="body-sm hover:underline" style={{ color: 'var(--text-muted)' }}>
+        <button
+          onClick={handleRefresh}
+          className="body-sm hover:underline"
+          style={{ color: 'var(--text-muted)' }}
+        >
           Look again
         </button>
       </div>
@@ -77,19 +85,15 @@ function Suggestions({ onAccept }) {
 
   return (
     <div className="mb-6">
-      {/* header */}
       <div className="flex items-baseline justify-between mb-3">
         <p className="eyebrow">Aegis noticed</p>
-        <p className="body-sm" style={{ color: 'var(--text-faint)' }}>
-          swipe →
-        </p>
+        <p className="body-sm" style={{ color: 'var(--text-faint)' }}>swipe →</p>
       </div>
 
       {message && (
         <p className="body-sm mb-3" style={{ color: 'var(--gold)' }}>{message}</p>
       )}
 
-      {/* swipe rail */}
       <div className="swipe-rail">
         {suggestions.map((s, index) => (
           <div key={`${s.title}-${index}`} className="swipe-card">
