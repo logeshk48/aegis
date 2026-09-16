@@ -1,0 +1,103 @@
+/* ===== THE READ ===== */
+
+@layer components {
+  .read-stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.75rem;
+    padding: 2.5rem 2rem;
+    border: 1px solid var(--border-subtle);
+    background:
+      radial-gradient(circle at 20% 0%, rgba(107, 77, 143, 0.28), transparent 55%),
+      linear-gradient(160deg, var(--bg-elevated) 0%, var(--bg-raised) 50%, var(--bg-base) 100%);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .read-stage::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 15%; right: 15%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.6;
+  }
+
+  @media (max-width: 640px) {
+    .read-stage { padding: 1.75rem 1.25rem; border-radius: 1.4rem; }
+  }
+
+  /* opening paragraph — the hook */
+  .read-opening {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.15rem, 3.2vw, 1.5rem);
+    font-weight: 400;
+    line-height: 1.55;
+    color: var(--text-display);
+    letter-spacing: -0.01em;
+  }
+
+  /* sections */
+  .read-section {
+    padding: 1.25rem 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .read-section-title {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+  }
+
+  .read-section-body {
+    font-size: 0.92rem;
+    line-height: 1.8;
+    color: var(--text-body);
+    margin-top: 0.6rem;
+  }
+
+  /* closing line — the punch */
+  .read-closing {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.2rem, 3.5vw, 1.65rem);
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--gold);
+    text-align: center;
+    padding: 2rem 1rem 0.5rem;
+    letter-spacing: -0.01em;
+  }
+
+  /* the reveal */
+  @keyframes readIn {
+    from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+  .read-in { animation: readIn 0.9s var(--ease) both; }
+
+  /* thinking state */
+  .read-thinking {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .think-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--gold);
+    animation: thinkPulse 1.4s ease-in-out infinite;
+  }
+  .think-dot:nth-child(2) { animation-delay: 0.2s; }
+  .think-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes thinkPulse {
+    0%, 100% { opacity: 0.2; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+}
