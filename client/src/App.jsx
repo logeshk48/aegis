@@ -5,6 +5,7 @@ import {
   Flame,
   BookOpen,
   Brain,
+  Eye,
   BarChart3,
   LogOut,
 } from 'lucide-react';
@@ -16,6 +17,7 @@ import Habits from './pages/Habits';
 import Dashboard from './pages/Dashboard';
 import Diary from './pages/Diary';
 import Memory from './pages/Memory';
+import Read from './pages/Read';
 import ProtectedRoute from './components/ProtectedRoute';
 import { logout } from './utils/auth';
 
@@ -37,13 +39,14 @@ function PillNav() {
     { to: '/habits', label: 'Habits', icon: Flame },
     { to: '/diary', label: 'Diary', icon: BookOpen },
     { to: '/memory', label: 'Memory', icon: Brain },
+    { to: '/read', label: 'Read', icon: Eye },
     { to: '/dashboard', label: 'Stats', icon: BarChart3 },
   ];
 
   return (
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[95vw]">
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[96vw]">
       <nav
-        className="flex items-center gap-0.5 sm:gap-1 rounded-full px-1.5 py-1.5 sm:px-2 sm:py-2"
+        className="flex items-center gap-0 sm:gap-0.5 rounded-full px-1.5 py-1.5 sm:px-2 sm:py-2"
         style={{
           background: 'rgba(20, 16, 31, 0.85)',
           backdropFilter: 'blur(20px)',
@@ -66,13 +69,13 @@ function PillNav() {
                   ? {
                       background: 'var(--gradient-gold)',
                       color: '#14101f',
-                      paddingLeft: '0.9rem',
-                      paddingRight: '0.9rem',
+                      paddingLeft: '0.85rem',
+                      paddingRight: '0.85rem',
                     }
                   : { color: 'var(--text-muted)' }),
               }}
             >
-              <Icon size={18} strokeWidth={2} />
+              <Icon size={17} strokeWidth={2} />
               {active && <span className="text-sm font-semibold">{item.label}</span>}
             </Link>
           );
@@ -86,7 +89,7 @@ function PillNav() {
           style={{ color: 'var(--text-muted)', transition: 'color 0.3s' }}
           title="Logout"
         >
-          <LogOut size={18} strokeWidth={2} />
+          <LogOut size={17} strokeWidth={2} />
         </button>
       </nav>
     </div>
@@ -116,6 +119,7 @@ function App() {
           <Route path="/habits" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
           <Route path="/diary" element={<ProtectedRoute><Diary /></ProtectedRoute>} />
           <Route path="/memory" element={<ProtectedRoute><Memory /></ProtectedRoute>} />
+          <Route path="/read" element={<ProtectedRoute><Read /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
