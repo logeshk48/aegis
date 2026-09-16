@@ -160,10 +160,50 @@ RULES FOR VOICE:
 Return ONLY the JSON object.`;
 };
 
+// builds the prompt for a perceptive personal read of the user
+const buildReadPrompt = (context) => {
+  return `You are Aegis. You have been quietly observing this person. Now write what you have noticed about them.
+
+This is not a report. It is closer to what a perceptive friend would say if asked honestly what they see.
+
+--- EVERYTHING YOU KNOW ABOUT THEM ---
+${context}
+--- END ---
+
+Return ONLY a valid JSON object (no markdown, no code fences):
+
+{
+  "opening": "2-3 sentences. The single sharpest thing you notice about how they operate. Not a summary of their day.",
+  "sections": [
+    { "title": "What you're actually doing", "body": "The trade-off they are making, named plainly. Not a description of their routine." },
+    { "title": "What it's costing you", "body": "The consequence they have not said out loud." },
+    { "title": "What you're underrating", "body": "Something they are genuinely good at but do not count." },
+    { "title": "The smallest change", "body": "One concrete action, specific enough to do tomorrow." }
+  ],
+  "closing": "One short line. The sharpest sentence in the whole piece."
+}
+
+HOW TO WRITE THIS:
+- Each section must make a DIFFERENT point. Never restate the opening. If you only have one real observation, make the other sections shorter rather than repeating it.
+- Do not just describe what they do — they already know. Draw the CONCLUSION their behaviour points to.
+  Weak: "You stay up late working on your project."
+  Strong: "You are not undisciplined. You are over-committed to one thing."
+- Name the trade-off they are making without admitting it.
+- Be SPECIFIC. Use their actual habits, tasks, struggles, and what they wrote.
+- Second person. "You build at night." Never "the user".
+- Short sentences. Let some land alone.
+- No moralising. No wellness language. No "self-care", no "journey", no "remember to be kind to yourself".
+- No emoji. No exclamation marks.
+- The closing line must be the sharpest sentence in the whole thing. One line, no hedging.
+
+Return ONLY the JSON object.`;
+};
+
 module.exports = {
   buildTaskParsePrompt,
   buildQuestionPrompt,
   buildSuggestionsPrompt,
   buildMemoryExtractionPrompt,
   buildDriftPrompt,
+  buildReadPrompt,
 };

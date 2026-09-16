@@ -15,6 +15,7 @@ const digestRoutes = require('./routes/digestRoutes');
 const diaryRoutes = require('./routes/diaryRoutes');
 const memoryRoutes = require('./routes/memoryRoutes');
 const driftRoutes = require('./routes/driftRoutes');
+const readRoutes = require('./routes/readRoutes');
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use('/api/digest', digestRoutes);
 app.use('/api/diary', diaryRoutes);
 app.use('/api/memories', memoryRoutes);
 app.use('/api/drift', driftRoutes);
+app.use('/api/read', readRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Hello from your server! 🚀' });
