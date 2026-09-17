@@ -22,6 +22,8 @@ const STATE_WORD = {
   unknown: 'Still learning you',
 };
 
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
 /**
  * Builds the morning brief: what Aegis thinks, not just what's on your list.
  */
@@ -85,27 +87,37 @@ const buildDigestForUser = async (user) => {
     day: 'numeric',
   });
 
-  const signalLines =
+  const downSignals =
     drift?.signals?.filter((s) => s.direction === 'down').slice(0, 3) || [];
 
-  const signalHtml =
-    signalLines.length > 0
-      ? `<ul style="margin:12px 0 0;padding-left:18px;color:#8a819e;font-size:13px;line-height:1.9;">
-          ${signalLines
-            .map(
-              (s) =>
-                `<li>${s.label} down ${Math.abs(s.changePct)}% from your normal</li>`
-            )
-            .join('')}
-          ${overdue.length > 0 ? `<li>${overdue.length} task${overdue.length > 1 ? 's' : ''} past their date</li>` : ''}
-        </ul>`
-      : '';
+  // only show the signal list when it adds something the paragraph didn't
+  const showSignals = downSignals.length > 1 || overdue.length > 0;
+
+  const signalHtml = showSignals
+    ? `<ul style="margin:12px 0 0;padding-left:18px;color:#8a819e;font-size:13px;line-height:1.9;">
+        ${downSignals
+          .map(
+            (s) => `<li>${s.label} down ${Math.abs(s.changePct)}% from your normal</li>`
+          )
+          .join('')}
+        ${
+          overdue.length > 0
+            ? `<li>${plural(overdue.length, 'task')} past their date</li>`
+            : ''
+        }
+      </ul>`
+    : '';
 
   const taskHtml =
     dueToday.length > 0 || overdue.length > 0
       ? `<h3 style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#d4af7a;margin:28px 0 10px;">Today</h3>
          <ul style="margin:0;padding-left:18px;color:#c9c2d4;font-size:14px;line-height:1.9;">
-           ${overdue.map((t) => `<li>${t.title} <span style="color:#c98b8b;font-size:12px;">— overdue</span></li>`).join('')}
+           ${overdue
+             .map(
+               (t) =>
+                 `<li>${t.title} <span style="color:#c98b8b;font-size:12px;">— overdue</span></li>`
+             )
+             .join('')}
            ${dueToday.map((t) => `<li>${t.title}</li>`).join('')}
          </ul>`
       : '';
@@ -114,9 +126,30 @@ const buildDigestForUser = async (user) => {
     habitsPending.length > 0
       ? `<h3 style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#d4af7a;margin:28px 0 10px;">Rituals waiting</h3>
          <ul style="margin:0;padding-left:18px;color:#c9c2d4;font-size:14px;line-height:1.9;">
-           ${habitsPending.slice(0, 5).map((h) => `<li>${h.name}${h.streak > 0 ? ` <span style="color:#8a819e;font-size:12px;">— ${h.streak} day streak</span>` : ''}</li>`).join('')}
+           ${habitsPending
+             .slice(0, 5)
+             .map(
+               (h) =>
+                 `<li>${h.name}${
+                   h.streak > 0
+                     ? ` <span style="color:#8a819e;font-size:12px;">— ${plural(
+                         h.streak,
+                         'day'
+                       )}</span>`
+                     : ''
+                 }</li>`
+             )
+             .join('')}
          </ul>`
       : '';
+
+  const footerBits = [];
+  if (doneYesterday > 0) {
+    footerBits.push(`You finished ${plural(doneYesterday, 'thing')} yesterday.`);
+  }
+  if (bestStreak > 0) {
+    footerBits.push(`Longest streak: ${plural(bestStreak, 'day')}.`);
+  }
 
   const html = `
   <div style="background:#14101f;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
@@ -150,11 +183,8 @@ const buildDigestForUser = async (user) => {
       ${habitHtml}
 
       ${
-        doneYesterday > 0 || bestStreak > 0
-          ? `<p style="margin:28px 0 0;font-size:13px;color:#8a819e;">
-              ${doneYesterday > 0 ? `You finished ${doneYesterday} yesterday.` : ''}
-              ${bestStreak > 0 ? ` Longest streak: ${bestStreak} days.` : ''}
-             </p>`
+        footerBits.length > 0
+          ? `<p style="margin:28px 0 0;font-size:13px;color:#8a819e;">${footerBits.join(' ')}</p>`
           : ''
       }
 
