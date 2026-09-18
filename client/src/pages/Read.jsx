@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getRead } from '../services/readApi';
+import Patterns from '../components/Patterns';
 import '../styles/read.css';
 
 function Read() {
@@ -77,9 +78,7 @@ function Read() {
         ) : (
           <>
             {/* opening */}
-            {revealed >= 1 && (
-              <p className="read-opening read-in">{read.opening}</p>
-            )}
+            {revealed >= 1 && <p className="read-opening read-in">{read.opening}</p>}
 
             {/* sections */}
             {!read.thin &&
@@ -100,8 +99,11 @@ function Read() {
         )}
       </div>
 
+      {/* Patterns */}
+      <Patterns />
+
       {/* footer */}
-      <div className="flex items-center justify-between mt-5 mb-8">
+      <div className="flex items-center justify-between mt-8 mb-8">
         <p className="body-sm" style={{ color: 'var(--text-faint)' }}>
           {read.generatedAt
             ? `Read ${new Date(read.generatedAt).toLocaleDateString('en-US', {
