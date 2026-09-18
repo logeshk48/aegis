@@ -1,6 +1,9 @@
 const Task = require('../models/Task');
 const Habit = require('../models/Habit');
 const DiaryEntry = require('../models/DiaryEntry');
+const { askAI, cleanJsonString } = require('./aiService');
+const { buildCompactContext } = require('./contextService');
+const { buildPatternPrompt } = require('./prompts');
 
 const DAY = 86400000;
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -12,9 +15,6 @@ const pct = (n) => Math.round(n * 100);
 // Each returns a finding object, or null if the evidence is too weak.
 // Staying quiet is always better than claiming a weak pattern.
 
-/**
- * Which day of the week do habits get skipped most?
- */
 const habitDayBias = (habits) => {
   if (habits.length === 0) return null;
 
@@ -23,17 +23,14 @@ const habitDayBias = (habits) => {
     Date.now()
   );
   const totalDays = Math.floor((Date.now() - earliest) / DAY);
-  if (totalDays < 14) return null; // need at least two weeks
+  if (totalDays < 14) return null;
 
-  // count check-ins per weekday, and how many of each weekday have passed
   const done = [0, 0, 0, 0, 0, 0, 0];
   const possible = [0, 0, 0, 0, 0, 0, 0];
 
   for (let i = 0; i < totalDays; i++) {
     const d = new Date(Date.now() - i * DAY);
-    possible[d.getDay()] += habits.filter(
-      (h) => new Date(h.createdAt) <= d
-    ).length;
+    possible[d.getDay()] += habits.filter((h) => new Date(h.createdAt) <= d).length;
   }
 
   for (const h of habits) {
@@ -50,7 +47,6 @@ const habitDayBias = (habits) => {
   const worst = valid.reduce((min, x) => (x.rate < min.rate ? x : min));
   const best = valid.reduce((max, x) => (x.rate > max.rate ? x : max));
 
-  // only report if the worst day is meaningfully below average
   if (avg === 0 || worst.rate / avg > 0.6) return null;
 
   return {
@@ -71,9 +67,6 @@ const habitDayBias = (habits) => {
   };
 };
 
-/**
- * Do starred (important) tasks actually get finished more often?
- */
 const starCorrelation = (tasks) => {
   const starred = tasks.filter((t) => t.important);
   const plain = tasks.filter((t) => !t.important);
@@ -104,20 +97,14 @@ const starCorrelation = (tasks) => {
   };
 };
 
-/**
- * How long do tasks sit before being completed?
- */
 const completionLag = (tasks) => {
   const done = tasks.filter((t) => t.completed && t.createdAt && t.updatedAt);
   if (done.length < 5) return null;
 
-  const lags = done.map(
-    (t) => (new Date(t.updatedAt) - new Date(t.createdAt)) / DAY
-  );
+  const lags = done.map((t) => (new Date(t.updatedAt) - new Date(t.createdAt)) / DAY);
   const avg = lags.reduce((s, l) => s + l, 0) / lags.length;
   const sameDay = lags.filter((l) => l < 1).length / lags.length;
 
-  // only interesting at the extremes
   if (sameDay < 0.6 && avg < 3) return null;
 
   return {
@@ -136,9 +123,6 @@ const completionLag = (tasks) => {
   };
 };
 
-/**
- * What rhythm does journalling follow?
- */
 const diaryRhythm = (entries) => {
   if (entries.length < 5) return null;
 
@@ -155,13 +139,12 @@ const diaryRhythm = (entries) => {
   const avgGap = gaps.reduce((s, g) => s + g, 0) / gaps.length;
   const maxGap = Math.max(...gaps);
 
-  // day-of-week bias in writing
   const byDay = [0, 0, 0, 0, 0, 0, 0];
   entries.forEach((e) => byDay[dayOf(e.entryDate)]++);
   const topDay = byDay.indexOf(Math.max(...byDay));
   const topShare = byDay[topDay] / entries.length;
 
-  if (avgGap < 1.5 && topShare < 0.3) return null; // writes daily, nothing notable
+  if (avgGap < 1.5 && topShare < 0.3) return null;
 
   return {
     key: 'diary_rhythm',
@@ -179,9 +162,6 @@ const diaryRhythm = (entries) => {
   };
 };
 
-/**
- * Which habit breaks first? (lowest completion rate = most fragile)
- */
 const fragileHabit = (habits) => {
   const eligible = habits.filter((h) => {
     const age = (Date.now() - new Date(h.createdAt)) / DAY;
@@ -222,10 +202,6 @@ const fragileHabit = (habits) => {
 
 // ---------- orchestrator ----------
 
-/**
- * Runs every detector and returns only the findings with real evidence,
- * strongest first.
- */
 const findPatterns = async (userId) => {
   const [tasks, habits, entries] = await Promise.all([
     Task.find({ user: userId }),
@@ -249,4 +225,89 @@ const findPatterns = async (userId) => {
   };
 };
 
-module.exports = { findPatterns };
+// ---------- AI phrasing ----------
+
+// cache — patterns are structural and change slowly
+const patternCache = new Map();
+const CACHE_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+const validatePatterns = (items, findings) => {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .filter(
+      (p) =>
+        p &&
+        typeof p.title === 'string' &&
+        p.title.trim() &&
+        typeof p.observation === 'string' &&
+        p.observation.trim()
+    )
+    .map((p, i) => ({
+      key: findings[i]?.key || `pattern_${i}`,
+      title: p.title.trim(),
+      observation: p.observation.trim(),
+      meaning: typeof p.meaning === 'string' ? p.meaning.trim() : '',
+      strength: findings[i]?.strength ?? 0,
+    }))
+    .slice(0, findings.length);
+};
+
+// plain fallback if the AI is unavailable — the facts still stand
+const rawFallback = (findings) =>
+  findings.map((f) => ({
+    key: f.key,
+    title: 'A pattern in your data',
+    observation: f.raw,
+    meaning: '',
+    strength: f.strength,
+  }));
+
+const getPatterns = async (userId, force = false) => {
+  const key = userId.toString();
+
+  if (!force) {
+    const cached = patternCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) {
+      return { ...cached.result, cached: true };
+    }
+  }
+
+  const { findings, dataPoints } = await findPatterns(userId);
+
+  if (findings.length === 0) {
+    return {
+      patterns: [],
+      dataPoints,
+      thin: true,
+      message:
+        dataPoints < 15
+          ? 'Not enough history yet. Patterns need a few weeks of use to appear.'
+          : 'Nothing stands out yet. Your behaviour is fairly even — which is its own kind of pattern.',
+    };
+  }
+
+  try {
+    const context = await buildCompactContext(userId);
+    const prompt = buildPatternPrompt(findings, context);
+    const raw = await askAI(prompt);
+    const cleaned = cleanJsonString(raw);
+    const parsed = JSON.parse(cleaned);
+
+    const patterns = validatePatterns(parsed, findings);
+    const result = {
+      patterns: patterns.length > 0 ? patterns : rawFallback(findings),
+      dataPoints,
+      thin: false,
+      generatedAt: new Date(),
+    };
+
+    patternCache.set(key, { result, expiresAt: Date.now() + CACHE_MS });
+    return result;
+  } catch (err) {
+    console.error('Pattern phrasing failed:', err.message);
+    return { patterns: rawFallback(findings), dataPoints, thin: false };
+  }
+};
+
+module.exports = { findPatterns, getPatterns };

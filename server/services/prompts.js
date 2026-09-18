@@ -199,6 +199,46 @@ HOW TO WRITE THIS:
 Return ONLY the JSON object.`;
 };
 
+// builds the prompt that phrases statistical findings as plain observations
+const buildPatternPrompt = (findings, context) => {
+  const findingLines = findings
+    .map((f, i) => `${i + 1}. [${f.key}] ${f.raw}`)
+    .join('\n\n');
+
+  return `You are Aegis. You have analysed this person's history and found the patterns below. Your job is to say each one back to them in plain language.
+
+THE FINDINGS (already verified — these are facts, not guesses):
+${findingLines}
+
+--- WHO THEY ARE ---
+${context}
+--- END ---
+
+Return ONLY a valid JSON array (no markdown, no code fences). One object per finding, in the same order:
+
+[
+  {
+    "title": "4-7 words naming the pattern",
+    "observation": "1-2 sentences stating what the data shows. Include the actual numbers.",
+    "meaning": "1 sentence on what this suggests about how they operate."
+  }
+]
+
+RULES:
+- Return EXACTLY ${findings.length} object(s), one per finding, in the same order.
+- Use ONLY the numbers given above. Never invent a statistic.
+- Do not add patterns that are not in the list.
+- Second person. "You skip Thursdays." Never "the user".
+- The "meaning" must be an inference, not a restatement.
+  Weak: "This shows you complete more starred tasks."
+  Strong: "Marking something important is how you actually commit to it."
+- Plain language. No jargon, no percentages in the title.
+- No moralising, no advice, no wellness language. Observe, do not instruct.
+- No emoji. No exclamation marks.
+
+Return ONLY the JSON array.`;
+};
+
 module.exports = {
   buildTaskParsePrompt,
   buildQuestionPrompt,
@@ -206,4 +246,5 @@ module.exports = {
   buildMemoryExtractionPrompt,
   buildDriftPrompt,
   buildReadPrompt,
+  buildPatternPrompt,
 };
