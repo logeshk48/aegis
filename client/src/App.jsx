@@ -1,13 +1,10 @@
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Home as HomeIcon,
+  Sparkles,
   CheckSquare,
   Flame,
   BookOpen,
-  Brain,
-  Eye,
-  Sparkles,
-  BarChart3,
   LogOut,
 } from 'lucide-react';
 import Home from './pages/Home';
@@ -35,21 +32,19 @@ function PillNav() {
     navigate('/login');
   };
 
+  // only the five things used daily
   const navItems = [
     { to: '/', label: 'Home', icon: HomeIcon },
     { to: '/agent', label: 'Agent', icon: Sparkles },
     { to: '/tasks', label: 'Tasks', icon: CheckSquare },
     { to: '/habits', label: 'Habits', icon: Flame },
     { to: '/diary', label: 'Diary', icon: BookOpen },
-    { to: '/memory', label: 'Memory', icon: Brain },
-    { to: '/read', label: 'Read', icon: Eye },
-    { to: '/dashboard', label: 'Stats', icon: BarChart3 },
   ];
 
   return (
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[97vw]">
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[95vw]">
       <nav
-        className="flex items-center rounded-full px-1.5 py-1.5"
+        className="flex items-center gap-0.5 rounded-full px-2 py-2"
         style={{
           background: 'rgba(20, 16, 31, 0.88)',
           backdropFilter: 'blur(20px)',
@@ -65,21 +60,21 @@ function PillNav() {
             <Link
               key={item.to}
               to={item.to}
-              className="flex items-center gap-1.5 rounded-full px-2 py-2"
+              className="flex items-center gap-2 rounded-full px-3 py-2.5"
               style={{
                 transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                 ...(active
                   ? {
                       background: 'var(--gradient-gold)',
                       color: '#14101f',
-                      paddingLeft: '0.8rem',
-                      paddingRight: '0.8rem',
+                      paddingLeft: '1rem',
+                      paddingRight: '1rem',
                     }
                   : { color: 'var(--text-muted)' }),
               }}
             >
-              <Icon size={16} strokeWidth={2} />
-              {active && <span className="text-xs font-semibold">{item.label}</span>}
+              <Icon size={19} strokeWidth={2} />
+              {active && <span className="text-sm font-semibold">{item.label}</span>}
             </Link>
           );
         })}
@@ -88,11 +83,11 @@ function PillNav() {
 
         <button
           onClick={handleLogout}
-          className="flex items-center rounded-full px-2 py-2"
+          className="flex items-center rounded-full px-3 py-2.5"
           style={{ color: 'var(--text-muted)', transition: 'color 0.3s' }}
           title="Logout"
         >
-          <LogOut size={16} strokeWidth={2} />
+          <LogOut size={19} strokeWidth={2} />
         </button>
       </nav>
     </div>
@@ -122,6 +117,7 @@ function App() {
           <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
           <Route path="/habits" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
           <Route path="/diary" element={<ProtectedRoute><Diary /></ProtectedRoute>} />
+          {/* reached from Home, not the nav */}
           <Route path="/memory" element={<ProtectedRoute><Memory /></ProtectedRoute>} />
           <Route path="/read" element={<ProtectedRoute><Read /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

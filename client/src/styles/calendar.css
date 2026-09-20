@@ -1,0 +1,181 @@
+/* ===== CALENDAR ===== */
+
+@layer components {
+  .cal-panel {
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border-subtle);
+    background: linear-gradient(160deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    box-shadow: var(--shadow-soft);
+  }
+
+  @media (max-width: 640px) {
+    .cal-panel { padding: 1.1rem; }
+  }
+
+  /* month header */
+  .cal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+
+  .cal-month {
+    font-family: 'Fraunces', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-display);
+  }
+
+  .cal-nav {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    transition: all 0.3s var(--ease);
+  }
+  .cal-nav:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+  }
+
+  /* grid */
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.3rem;
+  }
+
+  .cal-dow {
+    text-align: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding-bottom: 0.5rem;
+  }
+
+  .cal-cell {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: var(--text-body);
+    border: 1px solid transparent;
+    transition: all 0.25s var(--ease);
+  }
+  .cal-cell:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border-subtle);
+  }
+
+  .cal-empty { visibility: hidden; }
+
+  .cal-other { color: var(--text-faint); opacity: 0.4; }
+
+  .cal-today {
+    border-color: var(--gold);
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .cal-selected {
+    background: var(--gradient-gold);
+    color: #14101f;
+    font-weight: 700;
+    border-color: transparent;
+  }
+  .cal-selected .cal-marks span { background: #14101f !important; }
+
+  /* markers under the number */
+  .cal-marks {
+    display: flex;
+    gap: 2px;
+    margin-top: 3px;
+    height: 4px;
+  }
+
+  .mark-task { width: 4px; height: 4px; border-radius: 999px; background: var(--gold); }
+  .mark-overdue { width: 4px; height: 4px; border-radius: 999px; background: var(--rose); }
+  .mark-diary { width: 4px; height: 4px; border-radius: 999px; background: var(--plum); }
+
+  /* day detail */
+  .day-detail {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .day-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-display);
+  }
+
+  .day-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.8rem;
+    background: rgba(0, 0, 0, 0.22);
+    transition: background 0.3s var(--ease);
+  }
+  .day-row:hover { background: rgba(0, 0, 0, 0.35); }
+
+  .day-row-done { opacity: 0.5; }
+  .day-row-done .day-row-title { text-decoration: line-through; }
+
+  .day-row-title {
+    flex: 1;
+    font-size: 0.86rem;
+    color: var(--text-display);
+    min-width: 0;
+  }
+
+  .day-empty {
+    padding: 1.75rem 0;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text-faint);
+    font-style: italic;
+  }
+
+  .day-diary {
+    margin-top: 0.75rem;
+    padding: 0.9rem 1rem;
+    border-radius: 0.8rem;
+    background: rgba(107, 77, 143, 0.1);
+    border-left: 2px solid var(--plum);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: var(--text-body);
+  }
+
+  /* legend */
+  .cal-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 1rem;
+    justify-content: center;
+  }
+  .cal-key {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.66rem;
+    color: var(--text-faint);
+  }
+}

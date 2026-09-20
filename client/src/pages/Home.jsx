@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Brain, Eye, BarChart3 } from 'lucide-react';
 import api from '../api/axios';
 import AskAegis from '../components/AskAegis';
 import Suggestions from '../components/Suggestions';
@@ -99,7 +101,6 @@ function Home() {
     }
   };
 
-  // turn a recovery plan into real tasks due today
   const handleStartRecovery = async (plan) => {
     const today = new Date();
     today.setHours(12, 0, 0, 0);
@@ -303,8 +304,24 @@ function Home() {
         <LifeTimeline />
       </div>
 
+      {/* Secondary destinations */}
+      <div className="more-row animate-rise delay-4">
+        <Link to="/read" className="more-link">
+          <Eye size={18} strokeWidth={1.8} />
+          <span className="more-label">Read</span>
+        </Link>
+        <Link to="/memory" className="more-link">
+          <Brain size={18} strokeWidth={1.8} />
+          <span className="more-label">Memory</span>
+        </Link>
+        <Link to="/dashboard" className="more-link">
+          <BarChart3 size={18} strokeWidth={1.8} />
+          <span className="more-label">Stats</span>
+        </Link>
+      </div>
+
       {/* Ask Aegis */}
-      <div className="animate-rise delay-4 mb-8">
+      <div className="mb-8">
         <AskAegis />
       </div>
     </div>

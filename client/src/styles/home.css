@@ -215,11 +215,7 @@
     .swipe-card { flex: 0 0 32%; }
   }
 
-  @media (max-width: 767px) {
-    .bento-stats .surface-tile { padding: 0.9rem 0.5rem; }
-    .numeral { font-size: 1.5rem; }
-  }
-    /* ---- drift panel ---- */
+  /* ---- drift panel ---- */
   .drift-panel {
     position: relative;
     overflow: hidden;
@@ -230,7 +226,6 @@
     box-shadow: var(--shadow-soft);
   }
 
-  /* a coloured bar across the top, by state */
   .drift-panel::before {
     content: '';
     position: absolute;
@@ -269,7 +264,6 @@
     margin-top: 0.75rem;
   }
 
-  /* signal rows */
   .signal-row {
     display: flex;
     align-items: center;
@@ -311,7 +305,6 @@
     flex-shrink: 0;
   }
 
-  /* recovery plan */
   .plan-step {
     display: flex;
     gap: 0.85rem;
@@ -345,12 +338,7 @@
     font-style: italic;
   }
 
-  @media (max-width: 640px) {
-    .signal-label { width: 6.5rem; font-size: 0.72rem; }
-    .drift-panel { padding: 1.35rem; }
-    .drift-headline { font-size: 1.25rem; }
-  }
-    /* ---- life timeline ---- */
+  /* ---- life timeline ---- */
   .timeline-panel {
     position: relative;
     overflow: hidden;
@@ -412,7 +400,6 @@
     margin-top: 0.3rem;
   }
 
-  /* legend */
   .tl-legend {
     display: flex;
     flex-wrap: wrap;
@@ -436,7 +423,6 @@
     flex-shrink: 0;
   }
 
-  /* period chips */
   .period-strip {
     display: flex;
     gap: 0.4rem;
@@ -470,5 +456,49 @@
     color: var(--text-faint);
     margin-top: 0.15rem;
     white-space: nowrap;
+  }
+
+  /* ---- secondary destinations ---- */
+  .more-row {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .more-link {
+    flex: 1;
+    min-width: 96px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.95rem 0.6rem;
+    border-radius: 1rem;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    transition: all 0.4s var(--ease);
+  }
+  .more-link:hover {
+    color: var(--gold);
+    border-color: rgba(212, 175, 122, 0.3);
+    transform: translateY(-2px);
+  }
+
+  .more-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 767px) {
+    .bento-stats .surface-tile { padding: 0.9rem 0.5rem; }
+    .numeral { font-size: 1.5rem; }
+    .signal-label { width: 6.5rem; font-size: 0.72rem; }
+    .drift-panel { padding: 1.35rem; }
+    .drift-headline { font-size: 1.25rem; }
   }
 }
