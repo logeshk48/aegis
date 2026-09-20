@@ -1,0 +1,141 @@
+/* ===== AGENT ===== */
+
+@layer components {
+  .agent-log {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-height: 40vh;
+  }
+
+  /* user message */
+  .msg-user {
+    align-self: flex-end;
+    max-width: 82%;
+    padding: 0.8rem 1.1rem;
+    border-radius: 1.1rem 1.1rem 0.3rem 1.1rem;
+    background: rgba(212, 175, 122, 0.12);
+    border: 1px solid rgba(212, 175, 122, 0.22);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-display);
+  }
+
+  /* agent reply */
+  .msg-agent {
+    align-self: flex-start;
+    max-width: 88%;
+    font-size: 0.92rem;
+    line-height: 1.75;
+    color: var(--text-body);
+    white-space: pre-wrap;
+  }
+
+  /* the activity trace */
+  .trace {
+    align-self: flex-start;
+    width: 100%;
+    padding-left: 0.2rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .trace-step {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-size: 0.74rem;
+    color: var(--text-faint);
+    padding: 0.28rem 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .trace-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--gold);
+    flex-shrink: 0;
+    opacity: 0.7;
+    transform: translateY(-2px);
+  }
+
+  .trace-name { color: var(--gold); }
+
+  .trace-fail { color: var(--rose); }
+
+  /* composer */
+  .agent-composer {
+    position: sticky;
+    bottom: 0;
+    padding-top: 1rem;
+    padding-bottom: 0.5rem;
+    background: linear-gradient(180deg, transparent, var(--bg-base) 25%);
+  }
+
+  .composer-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-end;
+  }
+
+  .composer-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 1rem;
+    padding: 0.85rem 1.1rem;
+    color: var(--text-display);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    resize: none;
+    max-height: 140px;
+    transition: border-color 0.3s var(--ease);
+  }
+  .composer-input::placeholder { color: var(--text-faint); }
+  .composer-input:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+
+  /* suggestion chips */
+  .agent-chip {
+    font-size: 0.74rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    white-space: nowrap;
+    transition: all 0.3s var(--ease);
+  }
+  .agent-chip:hover {
+    color: var(--gold);
+    border-color: rgba(212, 175, 122, 0.35);
+  }
+
+  /* working indicator */
+  .agent-working {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* reuse the thinking dots from read.css if that file isn't loaded */
+  .agent-working .think-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--gold);
+    animation: thinkPulse 1.4s ease-in-out infinite;
+  }
+  .agent-working .think-dot:nth-child(2) { animation-delay: 0.2s; }
+  .agent-working .think-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes thinkPulse {
+    0%, 100% { opacity: 0.2; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+}

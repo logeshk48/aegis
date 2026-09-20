@@ -6,6 +6,7 @@ import {
   BookOpen,
   Brain,
   Eye,
+  Sparkles,
   BarChart3,
   LogOut,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ import Dashboard from './pages/Dashboard';
 import Diary from './pages/Diary';
 import Memory from './pages/Memory';
 import Read from './pages/Read';
+import Agent from './pages/Agent';
 import ProtectedRoute from './components/ProtectedRoute';
 import { logout } from './utils/auth';
 
@@ -35,6 +37,7 @@ function PillNav() {
 
   const navItems = [
     { to: '/', label: 'Home', icon: HomeIcon },
+    { to: '/agent', label: 'Agent', icon: Sparkles },
     { to: '/tasks', label: 'Tasks', icon: CheckSquare },
     { to: '/habits', label: 'Habits', icon: Flame },
     { to: '/diary', label: 'Diary', icon: BookOpen },
@@ -44,11 +47,11 @@ function PillNav() {
   ];
 
   return (
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[96vw]">
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[97vw]">
       <nav
-        className="flex items-center gap-0 sm:gap-0.5 rounded-full px-1.5 py-1.5 sm:px-2 sm:py-2"
+        className="flex items-center rounded-full px-1.5 py-1.5"
         style={{
-          background: 'rgba(20, 16, 31, 0.85)',
+          background: 'rgba(20, 16, 31, 0.88)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           border: '1px solid var(--border-subtle)',
@@ -62,34 +65,34 @@ function PillNav() {
             <Link
               key={item.to}
               to={item.to}
-              className="flex items-center gap-2 rounded-full px-2 py-2 sm:px-2.5 sm:py-2.5"
+              className="flex items-center gap-1.5 rounded-full px-2 py-2"
               style={{
                 transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                 ...(active
                   ? {
                       background: 'var(--gradient-gold)',
                       color: '#14101f',
-                      paddingLeft: '0.85rem',
-                      paddingRight: '0.85rem',
+                      paddingLeft: '0.8rem',
+                      paddingRight: '0.8rem',
                     }
                   : { color: 'var(--text-muted)' }),
               }}
             >
-              <Icon size={17} strokeWidth={2} />
-              {active && <span className="text-sm font-semibold">{item.label}</span>}
+              <Icon size={16} strokeWidth={2} />
+              {active && <span className="text-xs font-semibold">{item.label}</span>}
             </Link>
           );
         })}
 
-        <div className="w-px h-5 mx-0.5" style={{ background: 'var(--border-subtle)' }}></div>
+        <div className="w-px h-5 mx-1" style={{ background: 'var(--border-subtle)' }}></div>
 
         <button
           onClick={handleLogout}
-          className="flex items-center rounded-full px-2 py-2 sm:px-2.5 sm:py-2.5"
+          className="flex items-center rounded-full px-2 py-2"
           style={{ color: 'var(--text-muted)', transition: 'color 0.3s' }}
           title="Logout"
         >
-          <LogOut size={17} strokeWidth={2} />
+          <LogOut size={16} strokeWidth={2} />
         </button>
       </nav>
     </div>
@@ -115,6 +118,7 @@ function App() {
 
         <Routes>
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/agent" element={<ProtectedRoute><Agent /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
           <Route path="/habits" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
           <Route path="/diary" element={<ProtectedRoute><Diary /></ProtectedRoute>} />
