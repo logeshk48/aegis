@@ -1,6 +1,34 @@
 /* ===== CALENDAR ===== */
 
 @layer components {
+  /* view toggle */
+  .view-toggle {
+    display: inline-flex;
+    padding: 0.25rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .view-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    color: var(--text-muted);
+    transition: all 0.35s var(--ease);
+  }
+  .view-btn:hover { color: var(--text-display); }
+
+  .view-btn-active {
+    background: var(--gradient-gold);
+    color: #14101f;
+  }
+
+  /* panel */
   .cal-panel {
     border-radius: 1.5rem;
     padding: 1.5rem;
@@ -81,8 +109,6 @@
 
   .cal-empty { visibility: hidden; }
 
-  .cal-other { color: var(--text-faint); opacity: 0.4; }
-
   .cal-today {
     border-color: var(--gold);
     color: var(--gold);
@@ -108,6 +134,22 @@
   .mark-task { width: 4px; height: 4px; border-radius: 999px; background: var(--gold); }
   .mark-overdue { width: 4px; height: 4px; border-radius: 999px; background: var(--rose); }
   .mark-diary { width: 4px; height: 4px; border-radius: 999px; background: var(--plum); }
+
+  /* legend */
+  .cal-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 1rem;
+    justify-content: center;
+  }
+  .cal-key {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.66rem;
+    color: var(--text-faint);
+  }
 
   /* day detail */
   .day-detail {
@@ -161,21 +203,5 @@
     font-size: 0.82rem;
     line-height: 1.7;
     color: var(--text-body);
-  }
-
-  /* legend */
-  .cal-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.9rem;
-    margin-top: 1rem;
-    justify-content: center;
-  }
-  .cal-key {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.66rem;
-    color: var(--text-faint);
   }
 }
