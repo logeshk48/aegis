@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Brain, Eye, BarChart3 } from 'lucide-react';
 import api from '../api/axios';
 import AskAegis from '../components/AskAegis';
 import Suggestions from '../components/Suggestions';
 import ProgressRing from '../components/ProgressRing';
 import DriftPanel from '../components/DriftPanel';
 import LifeTimeline from '../components/LifeTimeline';
+import MoreCards from '../components/MoreCards';
 import { buildSummary } from '../utils/summary';
 import '../styles/home.css';
 
@@ -126,6 +125,11 @@ function Home() {
   ).length;
 
   const bestStreak = habits.reduce((max, h) => Math.max(max, h.streak || 0), 0);
+
+  const overallRate =
+    tasks.length > 0
+      ? Math.round((tasks.filter((t) => t.completed).length / tasks.length) * 100)
+      : 0;
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -304,21 +308,8 @@ function Home() {
         <LifeTimeline />
       </div>
 
-      {/* Secondary destinations */}
-      <div className="more-row animate-rise delay-4">
-        <Link to="/read" className="more-link">
-          <Eye size={18} strokeWidth={1.8} />
-          <span className="more-label">Read</span>
-        </Link>
-        <Link to="/memory" className="more-link">
-          <Brain size={18} strokeWidth={1.8} />
-          <span className="more-label">Memory</span>
-        </Link>
-        <Link to="/dashboard" className="more-link">
-          <BarChart3 size={18} strokeWidth={1.8} />
-          <span className="more-label">Stats</span>
-        </Link>
-      </div>
+      {/* Read · Memory · Stats */}
+      <MoreCards completionRate={overallRate} />
 
       {/* Ask Aegis */}
       <div className="mb-8">
