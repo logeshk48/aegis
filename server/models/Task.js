@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { classifyTask } = require('../utils/classifyTask');
 
 const taskSchema = new mongoose.Schema(
   {
@@ -26,7 +27,6 @@ const taskSchema = new mongoose.Schema(
       enum: ['low', 'medium', 'high'],
       default: 'medium',
     },
-    // explicit "this matters" flag
     important: {
       type: Boolean,
       default: false,
@@ -35,8 +35,28 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // the user's override of the auto-detected kind — null means "let Aegis decide"
+    kind: {
+      type: String,
+      enum: ['focus', 'errand', 'quick', 'activity', null],
+      default: null,
+    },
+    // an exact planned time — used for errands and activities
+    scheduledAt: {
+      type: Date,
+      default: null,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+// what kind this task actually is: the user's choice, or the title-based guess
+taskSchema.virtual('effectiveKind').get(function () {
+  return this.kind || classifyTask(this.title);
+});
 
 module.exports = mongoose.model('Task', taskSchema);

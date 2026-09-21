@@ -2,9 +2,11 @@ const FocusSession = require('../models/FocusSession');
 const Task = require('../models/Task');
 const { calculateDrift } = require('./driftService');
 const { extractAndStoreMemories } = require('./memoryService');
+const { classifyTask, prepFor } = require('../utils/classifyTask');
 
 const STALE_GRACE_MS = 30 * 60 * 1000; // 30 min past planned end
-const PAUSE_LIMIT_MS = 3 * 60 * 60 * 1000; // paused 3h → abandoned
+const PAUSE_LIMIT_MS = 3 * 60 * 60 * 1000; // paused 3h → closed
+const PREP_MINUTES = 5;
 
 const MINUTES_BY_STATE = {
   drifting: 10,
@@ -19,15 +21,18 @@ const VALID_STATES = Object.keys(MINUTES_BY_STATE);
 const dateStr = (d) => new Date(d).toISOString().split('T')[0];
 const todayStr = () => dateStr(new Date());
 
-// throw an error the controller can turn into a status code
 const fail = (status, message) => {
   const err = new Error(message);
   err.status = status;
   throw err;
 };
 
+const kindOf = (t) => t.kind || classifyTask(t.title);
+
+// errands and activities with a time still ahead are "planned" — handled for now
+const isPlanned = (t, now) => !!t.scheduledAt && new Date(t.scheduledAt) > now;
+
 // ---------- time maths ----------
-// Always computed from timestamps, never from a client-side counter.
 
 const activeMs = (s, now = new Date()) => {
   const end = s.endedAt || now;
@@ -83,6 +88,9 @@ const shapeTask = (t) => ({
   title: t.title,
   important: !!t.important,
   reason: reasonFor(t),
+  kind: kindOf(t),
+  kindIsManual: !!t.kind,
+  scheduledAt: t.scheduledAt || null,
 });
 
 const shapeSession = (s) => ({
@@ -101,7 +109,6 @@ const shapeSession = (s) => ({
 
 // ---------- housekeeping ----------
 
-// close sessions left running when a tab was closed
 const expireStale = async (userId) => {
   const active = await FocusSession.find({ user: userId, status: 'active' });
   const now = new Date();
@@ -131,15 +138,23 @@ const findOwned = async (userId, id) => {
 };
 
 // ---------- the mission ----------
+// The mission is your most important unplanned task, and its FORMAT follows
+// what kind of task it is:
+//   focus    → a timed session
+//   errand   → pick when you'll go (+ a desk prep step if there's one)
+//   quick    → clear up to three small ones right now
+//   activity → pick when you'll start
+// Alongside, a timed "desk mission" is always offered on the top focus task.
 
 const getMission = async (userId) => {
   await expireStale(userId);
 
-  // pure maths — no AI call, so no rate-limit risk
+  // pure maths — no AI call
   const drift = await calculateDrift(userId);
   const state = VALID_STATES.includes(drift.state) ? drift.state : 'unknown';
 
-  const since = new Date(todayStr()); // UTC midnight, matching the rest of the app
+  const since = new Date(todayStr());
+  const now = new Date();
 
   const [active, todays, open] = await Promise.all([
     FocusSession.findOne({ user: userId, status: 'active' }),
@@ -152,7 +167,41 @@ const getMission = async (userId) => {
   ]);
 
   open.sort(compareTasks);
-  const [top, ...rest] = open;
+
+  const unplanned = open.filter((t) => !isPlanned(t, now));
+  const planned = open
+    .filter((t) => isPlanned(t, now))
+    .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
+    .slice(0, 4);
+
+  // the primary mission — shaped by the kind of the top task
+  const top = unplanned[0] || null;
+  let primary = null;
+
+  if (top) {
+    const kind = kindOf(top);
+
+    if (kind === 'quick') {
+      primary = {
+        type: 'quick',
+        tasks: unplanned.filter((t) => kindOf(t) === 'quick').slice(0, 3).map(shapeTask),
+      };
+    } else if (kind === 'errand') {
+      const step = prepFor(top.title);
+      primary = {
+        type: 'errand',
+        task: shapeTask(top),
+        prep: step ? { step, minutes: PREP_MINUTES } : null,
+      };
+    } else if (kind === 'activity') {
+      primary = { type: 'activity', task: shapeTask(top) };
+    } else {
+      primary = { type: 'focus', task: shapeTask(top) };
+    }
+  }
+
+  // the timed desk mission — only ever on focus-kind tasks
+  const focusTasks = unplanned.filter((t) => kindOf(t) === 'focus');
 
   const minutesToday = Math.round(
     todays.reduce((sum, s) => sum + (s.actualMinutes || 0), 0)
@@ -165,8 +214,12 @@ const getMission = async (userId) => {
     sessionsToday: todays.length,
     missionDone: todays.some((s) => s.status === 'completed' && !s.isExtraRound),
     active: active ? shapeSession(active) : null,
-    task: top ? shapeTask(top) : null,
-    alternatives: rest.slice(0, 8).map(shapeTask),
+    primary,
+    focus: {
+      task: focusTasks[0] ? shapeTask(focusTasks[0]) : null,
+      alternatives: focusTasks.slice(1, 9).map(shapeTask),
+    },
+    planned: planned.map(shapeTask),
   };
 };
 
@@ -178,7 +231,10 @@ const getActive = async (userId) => {
   return s ? shapeSession(s) : null;
 };
 
-const startSession = async (userId, { taskId, plannedMinutes, isExtraRound, driftState }) => {
+const startSession = async (
+  userId,
+  { taskId, plannedMinutes, isExtraRound, driftState, title }
+) => {
   const minutes = Math.round(Number(plannedMinutes));
   if (!Number.isFinite(minutes) || minutes < 5 || minutes > 120) {
     fail(400, 'plannedMinutes must be between 5 and 120');
@@ -191,7 +247,7 @@ const startSession = async (userId, { taskId, plannedMinutes, isExtraRound, drif
     if (task.completed) fail(400, 'That task is already done');
   }
 
-  // only one active session at a time — close any leftover
+  // only one active session at a time
   const now = new Date();
   const leftovers = await FocusSession.find({ user: userId, status: 'active' });
   for (const s of leftovers) {
@@ -202,10 +258,13 @@ const startSession = async (userId, { taskId, plannedMinutes, isExtraRound, drif
     await s.save();
   }
 
+  // a custom title is used for prep steps and free focus
+  const customTitle = typeof title === 'string' ? title.trim().slice(0, 140) : '';
+
   const session = await FocusSession.create({
     user: userId,
     task: task ? task._id : null,
-    taskTitle: task ? task.title : 'Free focus',
+    taskTitle: task ? task.title : customTitle || 'Free focus',
     plannedMinutes: minutes,
     driftStateAtStart: VALID_STATES.includes(driftState) ? driftState : 'unknown',
     isExtraRound: !!isExtraRound,
@@ -244,7 +303,7 @@ const endSession = async (userId, id, outcome) => {
   }
 
   const s = await findOwned(userId, id);
-  if (s.status !== 'active') return shapeSession(s); // already ended — idempotent
+  if (s.status !== 'active') return shapeSession(s); // idempotent
 
   const now = new Date();
   if (s.pausedAt) {
@@ -253,7 +312,6 @@ const endSession = async (userId, id, outcome) => {
   }
 
   s.endedAt = now;
-  // giving up still counts the minutes you did — no guilt
   s.actualMinutes = Math.min(s.plannedMinutes, toMinutes(activeMs(s, now)));
   s.status = outcome;
   s.completed = outcome === 'completed';
@@ -281,7 +339,6 @@ const reflectOnSession = async (userId, id, { completeTask, reflection }) => {
     s.reflection = text;
     await s.save();
 
-    // feed memory in the background — never blocks the response
     const context =
       `Focus session on "${s.taskTitle}" (${s.actualMinutes} of ${s.plannedMinutes} minutes, ` +
       `${s.completed ? 'finished' : 'stopped early'}). Their reflection: ${text}`;
