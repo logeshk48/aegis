@@ -6,6 +6,7 @@ import ProgressRing from '../components/ProgressRing';
 import DriftPanel from '../components/DriftPanel';
 import LifeTimeline from '../components/LifeTimeline';
 import MoreCards from '../components/MoreCards';
+import MissionCard from '../components/MissionCard';
 import { buildSummary } from '../utils/summary';
 import '../styles/home.css';
 
@@ -23,6 +24,10 @@ function Home() {
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [completingId, setCompletingId] = useState(null);
+
+  // focus missions — the full-screen focus mode plugs in here next step
+  const [focusSession, setFocusSession] = useState(null);
+  const [missionKey, setMissionKey] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -168,6 +173,13 @@ function Home() {
           })}
         </p>
       </div>
+
+      {/* Today's focus mission — the one thing to do */}
+      <MissionCard
+        key={missionKey}
+        onStart={(s) => setFocusSession(s)}
+        onResume={(s) => setFocusSession(s)}
+      />
 
       {/* Drift diagnosis */}
       <DriftPanel onStartRecovery={handleStartRecovery} />

@@ -1,0 +1,269 @@
+/* ===== FOCUS MISSIONS ===== */
+
+@layer components {
+  /* ---- mission card ---- */
+  .mission-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    padding: 1.6rem 1.75rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-subtle);
+    background:
+      radial-gradient(circle at 0% 0%, rgba(212, 175, 122, 0.1), transparent 55%),
+      linear-gradient(150deg, var(--bg-elevated) 0%, var(--bg-raised) 55%, var(--bg-base) 100%);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .mission-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.55;
+  }
+
+  .mission-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .mission-today {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .mission-body {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  /* the minutes, set in a quiet gold disc */
+  .mission-clock {
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(212, 175, 122, 0.35);
+    background: rgba(0, 0, 0, 0.25);
+    box-shadow:
+      inset 0 0 24px rgba(212, 175, 122, 0.08),
+      0 0 0 6px rgba(212, 175, 122, 0.04);
+  }
+
+  .mission-minutes {
+    font-family: 'Fraunces', serif;
+    font-size: 2.3rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--gold);
+  }
+
+  .mission-unit {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-faint);
+    margin-top: 0.3rem;
+  }
+
+  .mission-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mission-label {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+  }
+
+  .mission-task {
+    font-family: 'Fraunces', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text-display);
+    overflow-wrap: anywhere;
+  }
+
+  .mission-reason {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    color: var(--gold);
+    background: rgba(212, 175, 122, 0.1);
+    border: 1px solid rgba(212, 175, 122, 0.2);
+  }
+
+  .mission-note {
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--text-muted);
+    margin-top: 0.65rem;
+  }
+
+  .mission-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.4rem;
+  }
+
+  .mission-start {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .btn-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.6rem 0.85rem;
+    border-radius: 0.8rem;
+    color: var(--text-muted);
+    transition: all 0.3s var(--ease);
+  }
+  .btn-text:hover {
+    color: var(--gold);
+    background: rgba(212, 175, 122, 0.06);
+  }
+  .btn-text:disabled {
+    opacity: 0.4;
+    cursor: default;
+    color: var(--text-muted);
+    background: none;
+  }
+
+  /* the number re-animates when it changes */
+  @keyframes numSwap {
+    from { opacity: 0; transform: translateY(-8px) scale(0.9); }
+    to { opacity: 1; transform: none; }
+  }
+  .num-swap { animation: numSwap 0.45s var(--ease); }
+
+  .mission-done-stat {
+    font-family: 'Fraunces', serif;
+    font-size: 2.2rem;
+    font-weight: 600;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  /* ---- task picker ---- */
+  .picker-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(8, 6, 14, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: fadeIn 0.25s ease both;
+  }
+
+  .picker-sheet {
+    width: 100%;
+    max-width: 480px;
+    max-height: 72vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(160deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    border: 1px solid var(--border-subtle);
+    border-radius: 1.5rem 1.5rem 0 0;
+    padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    animation: sheetIn 0.4s var(--ease) both;
+  }
+
+  @media (min-width: 640px) {
+    .picker-overlay { align-items: center; }
+    .picker-sheet { border-radius: 1.5rem; }
+  }
+
+  .picker-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+  }
+
+  .picker-list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .picker-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    text-align: left;
+    padding: 0.8rem 0.95rem;
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid transparent;
+    transition: all 0.3s var(--ease);
+  }
+  .picker-item:hover { border-color: var(--border-subtle); }
+
+  .picker-item-active {
+    border-color: var(--gold);
+    background: rgba(212, 175, 122, 0.08);
+  }
+
+  .picker-title {
+    font-size: 0.86rem;
+    color: var(--text-display);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .picker-reason {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-faint);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes sheetIn {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (max-width: 640px) {
+    .mission-card { padding: 1.3rem; }
+    .mission-body { gap: 1.1rem; }
+    .mission-clock { width: 80px; height: 80px; }
+    .mission-minutes { font-size: 1.9rem; }
+    .mission-task { font-size: 1.1rem; }
+  }
+}
