@@ -7,6 +7,7 @@ import DriftPanel from '../components/DriftPanel';
 import LifeTimeline from '../components/LifeTimeline';
 import MoreCards from '../components/MoreCards';
 import MissionCard from '../components/MissionCard';
+import FocusMode from '../components/FocusMode';
 import { buildSummary } from '../utils/summary';
 import '../styles/home.css';
 
@@ -25,7 +26,7 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [completingId, setCompletingId] = useState(null);
 
-  // focus missions — the full-screen focus mode plugs in here next step
+  // focus missions
   const [focusSession, setFocusSession] = useState(null);
   const [missionKey, setMissionKey] = useState(0);
 
@@ -46,6 +47,16 @@ function Home() {
     };
     fetchData();
   }, []);
+
+  // re-read tasks after the mission card changes something
+  const reloadTasks = async () => {
+    try {
+      const res = await api.get('/tasks');
+      setTasks(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const isHabitDoneToday = (h) => h.completedDates?.includes(todayStr());
 
@@ -121,6 +132,13 @@ function Home() {
     setTasks((prev) => [...created, ...prev]);
   };
 
+  // focus mode closed — refresh the mission, and the tasks if one was finished
+  const handleFocusClose = async ({ taskCompleted } = {}) => {
+    setFocusSession(null);
+    setMissionKey((k) => k + 1);
+    if (taskCompleted) await reloadTasks();
+  };
+
   const overdueTasks = tasks.filter(isOverdue);
   const dueTodayTasks = tasks.filter(isDueToday);
   const pendingTasks = tasks.filter((t) => !t.completed);
@@ -174,11 +192,12 @@ function Home() {
         </p>
       </div>
 
-      {/* Today's focus mission — the one thing to do */}
+      {/* Today's mission */}
       <MissionCard
         key={missionKey}
         onStart={(s) => setFocusSession(s)}
         onResume={(s) => setFocusSession(s)}
+        onTasksChanged={reloadTasks}
       />
 
       {/* Drift diagnosis */}
@@ -273,6 +292,14 @@ function Home() {
                   <span className="flex-1 text-sm" style={{ color: 'var(--text-display)' }}>
                     {task.title}
                   </span>
+                  {task.scheduledAt && (
+                    <span className="eyebrow" style={{ color: 'var(--gold)' }}>
+                      {new Date(task.scheduledAt).toLocaleTimeString([], {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -327,6 +354,9 @@ function Home() {
       <div className="mb-8">
         <AskAegis />
       </div>
+
+      {/* Full-screen focus — above everything, including the nav */}
+      {focusSession && <FocusMode session={focusSession} onClose={handleFocusClose} />}
     </div>
   );
 }

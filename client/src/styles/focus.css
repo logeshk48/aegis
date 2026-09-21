@@ -44,7 +44,6 @@
     gap: 1.5rem;
   }
 
-  /* the minutes, set in a quiet gold disc */
   .mission-clock {
     width: 96px;
     height: 96px;
@@ -153,7 +152,6 @@
     background: none;
   }
 
-  /* the number re-animates when it changes */
   @keyframes numSwap {
     from { opacity: 0; transform: translateY(-8px) scale(0.9); }
     to { opacity: 1; transform: none; }
@@ -259,11 +257,346 @@
     to { opacity: 1; transform: none; }
   }
 
+  /* ---- focus mode ---- */
+  .focus-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: calc(4.5rem + env(safe-area-inset-top, 0px)) 1.5rem
+      calc(2rem + env(safe-area-inset-bottom, 0px));
+    background:
+      radial-gradient(circle at 50% 42%, rgba(107, 77, 143, 0.22), transparent 60%),
+      #0d0a15;
+    animation: fadeIn 0.5s ease both;
+  }
+
+  .focus-top {
+    position: absolute;
+    top: calc(1.25rem + env(safe-area-inset-top, 0px));
+    left: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .focus-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .noise-chip {
+    font-size: 0.64rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    color: var(--text-faint);
+    border: 1px solid var(--border-subtle);
+    transition: all 0.3s var(--ease);
+  }
+  .noise-chip:hover { color: var(--text-muted); }
+
+  .noise-on {
+    color: var(--gold);
+    border-color: rgba(212, 175, 122, 0.45);
+    background: rgba(212, 175, 122, 0.08);
+  }
+
+  .focus-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-faint);
+    border: 1px solid var(--border-subtle);
+    transition: all 0.3s var(--ease);
+  }
+  .focus-icon-btn:hover {
+    color: var(--gold);
+    border-color: rgba(212, 175, 122, 0.45);
+  }
+
+  /* the ring */
+  .focus-ring-stage {
+    position: relative;
+    width: min(72vw, 320px);
+    aspect-ratio: 1;
+    flex-shrink: 0;
+  }
+
+  .focus-breath {
+    position: absolute;
+    inset: 12%;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(212, 175, 122, 0.16), transparent 70%);
+    animation: breathe 6s ease-in-out infinite;
+  }
+
+  @keyframes breathe {
+    0%, 100% { transform: scale(0.92); opacity: 0.5; }
+    50% { transform: scale(1.06); opacity: 1; }
+  }
+
+  .is-paused .focus-breath {
+    animation-play-state: paused;
+    opacity: 0.25;
+  }
+
+  .focus-ring-svg {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .focus-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.05);
+    stroke-width: 5;
+  }
+
+  .focus-fill {
+    fill: none;
+    stroke: url(#focusGold);
+    stroke-width: 5;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.3s linear, opacity 0.4s ease;
+    filter: drop-shadow(0 0 10px rgba(212, 175, 122, 0.45));
+  }
+
+  .is-paused .focus-fill { opacity: 0.4; }
+
+  .focus-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .focus-time {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(3rem, 13vw, 4.6rem);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-display);
+  }
+
+  .is-paused .focus-time { animation: pausedPulse 2s ease-in-out infinite; }
+
+  @keyframes pausedPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .focus-of {
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--text-faint);
+    margin-top: 0.7rem;
+  }
+
+  .focus-task {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.1rem, 4vw, 1.4rem);
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: center;
+    max-width: 26rem;
+    margin-top: 2.25rem;
+    color: var(--text-body);
+    overflow-wrap: anywhere;
+  }
+
+  .focus-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 2.25rem;
+  }
+
+  .focus-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-width: 7.5rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 0.75rem 1.2rem;
+    border-radius: 999px;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.3s var(--ease);
+  }
+  .focus-btn:hover {
+    color: var(--text-display);
+    border-color: var(--border-hover);
+  }
+
+  .focus-btn-main {
+    color: #14101f;
+    font-weight: 600;
+    background: var(--gradient-gold);
+    border-color: transparent;
+  }
+  .focus-btn-main:hover {
+    color: #14101f;
+    box-shadow: 0 8px 24px rgba(212, 175, 122, 0.3);
+  }
+
+  .focus-btn-warn {
+    color: var(--rose);
+    border-color: rgba(201, 139, 139, 0.45);
+  }
+
+  /* ---- after the session ---- */
+  .focus-result {
+    width: 100%;
+    max-width: 26rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: rise 0.7s var(--ease) both;
+  }
+
+  .focus-seal {
+    width: 112px;
+    height: 112px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    border: 1px solid rgba(212, 175, 122, 0.4);
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .focus-seal-done {
+    color: #14101f;
+    background: var(--gradient-gold);
+    border-color: transparent;
+    animation: sealBloom 1.1s var(--ease) both;
+  }
+
+  @keyframes sealBloom {
+    0% { transform: scale(0.6); box-shadow: 0 0 0 0 rgba(212, 175, 122, 0.6); }
+    55% { transform: scale(1.06); box-shadow: 0 0 0 22px rgba(212, 175, 122, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 40px rgba(212, 175, 122, 0.25); }
+  }
+
+  .focus-seal-num {
+    font-family: 'Fraunces', serif;
+    font-size: 2rem;
+    font-weight: 600;
+  }
+
+  .focus-result-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.4rem, 5vw, 1.8rem);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text-display);
+    margin-top: 1.5rem;
+  }
+
+  .focus-result-sub {
+    font-size: 0.86rem;
+    font-style: italic;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+  }
+
+  .focus-q {
+    width: 100%;
+    margin-top: 1.75rem;
+    text-align: left;
+  }
+
+  .focus-choice-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .focus-choice {
+    padding: 0.8rem;
+    border-radius: 0.85rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    background: rgba(0, 0, 0, 0.25);
+    transition: all 0.3s var(--ease);
+  }
+  .focus-choice:hover { color: var(--text-display); }
+
+  .focus-choice.is-on {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(212, 175, 122, 0.08);
+  }
+
+  .focus-reflect {
+    width: 100%;
+    resize: none;
+    padding: 0.85rem 1rem;
+    border-radius: 0.9rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-display);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-subtle);
+    transition: border-color 0.3s var(--ease);
+  }
+  .focus-reflect::placeholder { color: var(--text-faint); }
+  .focus-reflect:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+
+  .focus-continue {
+    width: 100%;
+    margin-top: 1.75rem;
+  }
+
+  /* ---- responsive ---- */
   @media (max-width: 640px) {
     .mission-card { padding: 1.3rem; }
     .mission-body { gap: 1.1rem; }
     .mission-clock { width: 80px; height: 80px; }
     .mission-minutes { font-size: 1.9rem; }
     .mission-task { font-size: 1.1rem; }
+  }
+
+  @media (max-width: 480px) {
+    .focus-top { left: 1rem; right: 1rem; }
+    .focus-btn { min-width: 0; padding: 0.7rem 1rem; }
+  }
+
+  /* respect users who turn animations off */
+  @media (prefers-reduced-motion: reduce) {
+    .focus-breath,
+    .is-paused .focus-time,
+    .focus-seal-done { animation: none; }
   }
 }

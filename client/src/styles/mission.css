@@ -1,0 +1,312 @@
+/* ===== MISSION VARIANTS ===== */
+
+@layer components {
+  /* chips under the task title */
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+  .chip-row .mission-reason { margin-top: 0; }
+
+  /* the tappable "what kind is this" chip */
+  .kind-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    color: var(--text-muted);
+    border: 1px dashed var(--border-hover);
+    transition: all 0.3s var(--ease);
+  }
+  .kind-chip:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+  }
+
+  .kind-menu {
+    flex-basis: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.3rem;
+    animation: fadeIn 0.25s ease both;
+  }
+
+  .kind-opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+    background: rgba(0, 0, 0, 0.25);
+    transition: all 0.3s var(--ease);
+  }
+  .kind-opt:hover { color: var(--text-display); }
+
+  .kind-opt-on {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(212, 175, 122, 0.08);
+  }
+
+  /* errand / activity / quick header */
+  .plan-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .plan-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    background: rgba(212, 175, 122, 0.08);
+    border: 1px solid rgba(212, 175, 122, 0.25);
+  }
+
+  .plan-question {
+    font-family: 'Fraunces', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-display);
+    margin-top: 1.35rem;
+  }
+
+  /* time slots */
+  .slot-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.8rem;
+  }
+
+  .slot-chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: left;
+    color: var(--text-display);
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-subtle);
+    transition: all 0.3s var(--ease);
+  }
+  .slot-chip:hover {
+    border-color: var(--gold);
+    background: rgba(212, 175, 122, 0.06);
+  }
+  .slot-chip:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .slot-time {
+    font-size: 0.66rem;
+    color: var(--text-faint);
+  }
+
+  .slot-pick {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-muted);
+  }
+
+  .slot-on {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .slot-custom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+    animation: fadeIn 0.25s ease both;
+  }
+
+  .slot-input {
+    flex: 1;
+    min-width: 210px;
+    padding: 0.65rem 0.85rem;
+    border-radius: 0.85rem;
+    font-size: 0.85rem;
+    color: var(--text-display);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-subtle);
+    color-scheme: dark;
+  }
+  .slot-input:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+
+  /* errand prep step */
+  .prep-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.95rem;
+    background: rgba(0, 0, 0, 0.22);
+    border-left: 2px solid var(--gold);
+  }
+
+  .prep-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-faint);
+  }
+
+  .prep-step {
+    font-size: 0.88rem;
+    color: var(--text-display);
+    margin-top: 0.2rem;
+  }
+
+  /* quick wins */
+  .quick-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 1.1rem;
+  }
+
+  .quick-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.85rem;
+    background: rgba(0, 0, 0, 0.22);
+    cursor: pointer;
+    transition: background 0.3s var(--ease);
+  }
+  .quick-row:hover { background: rgba(0, 0, 0, 0.35); }
+
+  .quick-title {
+    font-size: 0.88rem;
+    color: var(--text-display);
+    transition: color 0.3s var(--ease);
+  }
+
+  .quick-done { background: rgba(212, 175, 122, 0.06); }
+  .quick-done .quick-title {
+    text-decoration: line-through;
+    color: var(--text-faint);
+  }
+
+  /* the compact desk mission under an errand / quick / activity */
+  .desk-block {
+    margin-top: 1.5rem;
+    padding-top: 1.35rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .mission-clock-sm {
+    width: 72px;
+    height: 72px;
+  }
+  .mission-clock-sm .mission-minutes { font-size: 1.6rem; }
+
+  .desk-title {
+    font-size: 0.98rem;
+    font-weight: 500;
+    color: var(--text-display);
+    overflow-wrap: anywhere;
+  }
+
+  .mission-flash {
+    font-size: 0.8rem;
+    color: var(--gold);
+    margin-top: 1rem;
+    animation: fadeIn 0.3s ease both;
+  }
+
+  /* planned errands / activities */
+  .planned-strip {
+    margin-top: 1.4rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .planned-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.45rem 0;
+  }
+
+  .planned-dot {
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: var(--gold);
+    opacity: 0.7;
+  }
+
+  .planned-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.84rem;
+    color: var(--text-body);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .planned-when {
+    font-size: 0.72rem;
+    color: var(--gold);
+    white-space: nowrap;
+  }
+
+  .planned-btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.4rem;
+    transition: color 0.3s var(--ease);
+  }
+  .planned-btn:hover { color: var(--gold); }
+
+  @media (max-width: 640px) {
+    .plan-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+    }
+    .prep-row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .slot-chip { flex: 1 1 calc(50% - 0.45rem); }
+  }
+}
