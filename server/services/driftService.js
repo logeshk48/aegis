@@ -2,6 +2,7 @@ const Task = require('../models/Task');
 const Habit = require('../models/Habit');
 const DiaryEntry = require('../models/DiaryEntry');
 const DriftSnapshot = require('../models/DriftSnapshot');
+const FocusSession = require('../models/FocusSession');
 const { askAI, cleanJsonString } = require('./aiService');
 const { buildCompactContext } = require('./contextService');
 const { buildDriftPrompt } = require('./prompts');
@@ -9,6 +10,18 @@ const { buildDriftPrompt } = require('./prompts');
 const DAY = 86400000;
 const dateStr = (d) => new Date(d).toISOString().split('T')[0];
 const daysAgo = (n) => new Date(Date.now() - n * DAY);
+
+// Focus tuning.
+// REFERENCE is the daily minute count the rate saturates at, so the signal
+// stays a 0..1 rate like the other three. Two hours a day is deliberately
+// high: above it we stop distinguishing, the same way habit consistency and
+// journalling already cap at 1.
+const FOCUS_REFERENCE_MIN = 120;
+
+// Focus sessions are sparse by nature. Without a real baseline habit, one
+// quiet week reads as -100% and would wrongly trip the catastrophic floor,
+// so we refuse to judge focus at all below this much history.
+const MIN_BASELINE_FOCUS_MINUTES = 60;
 
 // ---------- individual signals ----------
 
@@ -61,6 +74,22 @@ const diaryEngagement = (entries, from, to) => {
   return Math.min(1, written.size / days);
 };
 
+/**
+ * Total focus minutes started inside a window.
+ * Attributed by startedAt, matching how getMission counts "today".
+ */
+const focusMinutesIn = (sessions, from, to) =>
+  sessions.reduce((sum, s) => {
+    const started = new Date(s.startedAt);
+    if (started < from || started > to) return sum;
+    return sum + (Number(s.actualMinutes) || 0);
+  }, 0);
+
+const focusRate = (minutes, from, to) => {
+  const days = Math.max(1, Math.round((to - from) / DAY));
+  return Math.min(1, minutes / days / FOCUS_REFERENCE_MIN);
+};
+
 // ---------- the main calculation ----------
 
 const calculateDrift = async (userId) => {
@@ -69,13 +98,23 @@ const calculateDrift = async (userId) => {
   const baselineFrom = daysAgo(37);
   const baselineTo = daysAgo(7);
 
-  const [tasks, habits, entries] = await Promise.all([
+  const [tasks, habits, entries, sessions] = await Promise.all([
     Task.find({ user: userId }),
     Habit.find({ user: userId }),
     DiaryEntry.find({ user: userId }),
+    // Only sessions the user actually ended. 'expired' is excluded on purpose:
+    // those are orphans closed by expireStale, and their actualMinutes is
+    // capped at plannedMinutes rather than measured, so counting them would
+    // credit time nobody spent.
+    FocusSession.find({
+      user: userId,
+      status: { $in: ['completed', 'abandoned'] },
+      startedAt: { $gte: baselineFrom },
+    }).select('startedAt actualMinutes'),
   ]);
 
-  const accountAge = tasks.length + habits.length + entries.length;
+  const accountAge =
+    tasks.length + habits.length + entries.length + sessions.length;
   if (accountAge < 5) {
     return {
       state: 'unknown',
@@ -85,6 +124,10 @@ const calculateDrift = async (userId) => {
       hasEnoughData: false,
     };
   }
+
+  const focusBaselineMins = focusMinutesIn(sessions, baselineFrom, baselineTo);
+  const focusRecentMins = focusMinutesIn(sessions, recentFrom, now);
+  const focusHasBaseline = focusBaselineMins >= MIN_BASELINE_FOCUS_MINUTES;
 
   const signals = [];
 
@@ -106,6 +149,14 @@ const calculateDrift = async (userId) => {
       label: 'Journalling',
       recent: diaryEngagement(entries, recentFrom, now),
       baseline: diaryEngagement(entries, baselineFrom, baselineTo),
+    },
+    {
+      key: 'focus',
+      label: 'Focus time',
+      recent: focusHasBaseline ? focusRate(focusRecentMins, recentFrom, now) : null,
+      baseline: focusHasBaseline
+        ? focusRate(focusBaselineMins, baselineFrom, baselineTo)
+        : null,
     },
   ];
 
@@ -144,10 +195,19 @@ const calculateDrift = async (userId) => {
   const upCount = signals.filter((s) => s.direction === 'up').length;
   const catastrophic = signals.some((s) => s.changePct <= -75);
 
+  // Proportions, not counts. A signal can drop out on any given day (no tasks
+  // created, no focus baseline), so a fixed "3 signals down" would quietly
+  // mean something different depending on how many reported. These ratios
+  // reproduce the old three-signal behaviour exactly and keep the same
+  // meaning when a fourth signal joins.
+  const total = signals.length;
+  const downRatio = total ? downCount / total : 0;
+  const upRatio = total ? upCount / total : 0;
+
   let state;
-  if (upCount >= 2 && score < 25 && !catastrophic) state = 'recovering';
-  else if (score >= 50 || downCount >= 3) state = 'drifting';
-  else if (score >= 25 || downCount >= 2 || catastrophic) state = 'slipping';
+  if (upRatio >= 0.5 && score < 25 && !catastrophic) state = 'recovering';
+  else if (score >= 50 || downRatio >= 0.75) state = 'drifting';
+  else if (score >= 25 || downRatio >= 0.5 || catastrophic) state = 'slipping';
   else state = 'steady';
 
   return {

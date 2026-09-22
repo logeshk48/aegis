@@ -6,6 +6,28 @@ const DAY = 86400000;
 const dateStr = (d) => new Date(d).toISOString().split('T')[0];
 const todayStr = () => dateStr(new Date());
 
+// ---------- what counts as risky ----------
+// LOSSY tools overwrite something we cannot reconstruct afterwards: a due
+// date, a completion flag, a streak. Creates are deliberately NOT lossy —
+// the worst a stray create_task does is add clutter you can delete, and
+// gating "plan my week" behind a confirmation would be maddening.
+//
+// One or two lossy changes run straight away and come back with undo data,
+// which is the pattern the rest of Aegis already uses. Three or more get
+// proposed instead, because undoing forty reschedules one toast at a time
+// is not undo.
+
+const LOSSY = new Set([
+  'reschedule_task',
+  'complete_task',
+  'uncomplete_task',
+  'check_in_habit',
+  'undo_habit_checkin',
+]);
+
+const BULK_THRESHOLD = 3; // lossy calls in one turn before we stop and ask
+const MAX_LOSSY_PER_RUN = 4; // cumulative ceiling across the whole run
+
 // ---------- tool definitions (what the model sees) ----------
 
 const toolDefinitions = [
@@ -86,6 +108,21 @@ const toolDefinitions = [
   {
     type: 'function',
     function: {
+      name: 'uncomplete_task',
+      description:
+        'Reopen a task that was marked done by mistake. Use when the user says they had not actually finished it.',
+      parameters: {
+        type: 'object',
+        properties: {
+          taskId: { type: 'string', description: 'The task _id from get_tasks' },
+        },
+        required: ['taskId'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'get_habits',
       description: "Read the user's habits with their streaks and recent completion dates.",
       parameters: { type: 'object', properties: {} },
@@ -115,7 +152,23 @@ const toolDefinitions = [
     type: 'function',
     function: {
       name: 'check_in_habit',
-      description: "Mark a habit as done for today. Only when the user says they've done it.",
+      description:
+        "Mark a habit as done for today. Only when the user says they've done it. This changes their streak, so never guess.",
+      parameters: {
+        type: 'object',
+        properties: {
+          habitId: { type: 'string', description: 'The habit _id from get_habits' },
+        },
+        required: ['habitId'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'undo_habit_checkin',
+      description:
+        "Remove today's check-in from a habit, for when it was logged by mistake. Recalculates the streak.",
       parameters: {
         type: 'object',
         properties: {
@@ -141,7 +194,58 @@ const toolDefinitions = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'propose_focus',
+      description:
+        'Offer the user a focus session on one of their tasks. This does NOT start anything — it puts a start button in front of them. Use when they ask what to work on, or say they want to get going.',
+      parameters: {
+        type: 'object',
+        properties: {
+          taskId: { type: 'string', description: 'The task _id from get_tasks' },
+          minutes: {
+            type: 'number',
+            description: 'Session length, 5 to 120. Keep it small if they sound stuck.',
+          },
+          why: {
+            type: 'string',
+            description: 'One short line on why this task, in their own terms.',
+          },
+        },
+        required: ['taskId'],
+      },
+    },
+  },
 ];
+
+// ---------- shared helpers ----------
+
+const recalcStreak = (habit) => {
+  const set = new Set(habit.completedDates || []);
+  let streak = 0;
+  const cursor = new Date();
+  while (set.has(dateStr(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  habit.streak = streak;
+  return streak;
+};
+
+const ownedTask = async (userId, taskId) => {
+  const task = await Task.findById(taskId).catch(() => null);
+  if (!task) return { error: 'No task with that id.' };
+  if (task.user.toString() !== userId.toString()) return { error: 'Not your task.' };
+  return { task };
+};
+
+const ownedHabit = async (userId, habitId) => {
+  const habit = await Habit.findById(habitId).catch(() => null);
+  if (!habit) return { error: 'No habit with that id.' };
+  if (habit.user.toString() !== userId.toString()) return { error: 'Not your habit.' };
+  return { habit };
+};
 
 // ---------- executors (what actually runs) ----------
 // Every executor scopes to userId. The model supplies arguments;
@@ -208,11 +312,12 @@ const executors = {
   },
 
   reschedule_task: async (userId, args) => {
-    const task = await Task.findById(args.taskId).catch(() => null);
-    if (!task) return { error: 'No task with that id.' };
-    if (task.user.toString() !== userId.toString()) {
-      return { error: 'Not your task.' };
-    }
+    const found = await ownedTask(userId, args.taskId);
+    if (found.error) return found;
+    const { task } = found;
+
+    // captured before the write, so the toast can put it back
+    const previous = task.dueDate ? dateStr(task.dueDate) : 'none';
 
     if (args.dueDate === 'none') {
       task.dueDate = null;
@@ -226,21 +331,45 @@ const executors = {
     return {
       updated: true,
       title: task.title,
+      previousDueDate: previous,
       dueDate: task.dueDate ? dateStr(task.dueDate) : null,
+      undo: {
+        tool: 'reschedule_task',
+        args: { taskId: task._id.toString(), dueDate: previous },
+      },
     };
   },
 
   complete_task: async (userId, args) => {
-    const task = await Task.findById(args.taskId).catch(() => null);
-    if (!task) return { error: 'No task with that id.' };
-    if (task.user.toString() !== userId.toString()) {
-      return { error: 'Not your task.' };
-    }
+    const found = await ownedTask(userId, args.taskId);
+    if (found.error) return found;
+    const { task } = found;
+
     if (task.completed) return { alreadyDone: true, title: task.title };
 
     task.completed = true;
     await task.save();
-    return { completed: true, title: task.title };
+    return {
+      completed: true,
+      title: task.title,
+      undo: { tool: 'uncomplete_task', args: { taskId: task._id.toString() } },
+    };
+  },
+
+  uncomplete_task: async (userId, args) => {
+    const found = await ownedTask(userId, args.taskId);
+    if (found.error) return found;
+    const { task } = found;
+
+    if (!task.completed) return { alreadyOpen: true, title: task.title };
+
+    task.completed = false;
+    await task.save();
+    return {
+      reopened: true,
+      title: task.title,
+      undo: { tool: 'complete_task', args: { taskId: task._id.toString() } },
+    };
   },
 
   get_habits: async (userId) => {
@@ -272,11 +401,9 @@ const executors = {
   },
 
   check_in_habit: async (userId, args) => {
-    const habit = await Habit.findById(args.habitId).catch(() => null);
-    if (!habit) return { error: 'No habit with that id.' };
-    if (habit.user.toString() !== userId.toString()) {
-      return { error: 'Not your habit.' };
-    }
+    const found = await ownedHabit(userId, args.habitId);
+    if (found.error) return found;
+    const { habit } = found;
 
     const today = todayStr();
     if ((habit.completedDates || []).includes(today)) {
@@ -284,19 +411,37 @@ const executors = {
     }
 
     habit.completedDates.push(today);
-
-    // recalculate streak
-    const set = new Set(habit.completedDates);
-    let streak = 0;
-    const cursor = new Date();
-    while (set.has(dateStr(cursor))) {
-      streak++;
-      cursor.setDate(cursor.getDate() - 1);
-    }
-    habit.streak = streak;
-
+    recalcStreak(habit);
     await habit.save();
-    return { checkedIn: true, name: habit.name, streak: habit.streak };
+
+    return {
+      checkedIn: true,
+      name: habit.name,
+      streak: habit.streak,
+      undo: { tool: 'undo_habit_checkin', args: { habitId: habit._id.toString() } },
+    };
+  },
+
+  undo_habit_checkin: async (userId, args) => {
+    const found = await ownedHabit(userId, args.habitId);
+    if (found.error) return found;
+    const { habit } = found;
+
+    const today = todayStr();
+    if (!(habit.completedDates || []).includes(today)) {
+      return { notCheckedIn: true, name: habit.name, streak: habit.streak };
+    }
+
+    habit.completedDates = habit.completedDates.filter((d) => d !== today);
+    recalcStreak(habit);
+    await habit.save();
+
+    return {
+      undone: true,
+      name: habit.name,
+      streak: habit.streak,
+      undo: { tool: 'check_in_habit', args: { habitId: habit._id.toString() } },
+    };
   },
 
   search_diary: async (userId, args) => {
@@ -319,6 +464,62 @@ const executors = {
       })),
     };
   },
+
+  // Writes nothing. Hands the frontend a start button and lets the
+  // person decide — which is what "propose" has to mean if the word
+  // is going to be worth anything.
+  propose_focus: async (userId, args) => {
+    const found = await ownedTask(userId, args.taskId);
+    if (found.error) return found;
+    const { task } = found;
+
+    if (task.completed) return { error: 'That task is already done.' };
+
+    const raw = Math.round(Number(args.minutes));
+    const minutes = Number.isFinite(raw) ? Math.max(5, Math.min(120, raw)) : 25;
+
+    return {
+      proposedFocus: {
+        taskId: task._id.toString(),
+        title: task.title,
+        minutes,
+        why: typeof args.why === 'string' ? args.why.trim().slice(0, 140) : '',
+      },
+    };
+  },
+};
+
+// ---------- previews (what a proposal says out loud) ----------
+// Resolves ids to titles WITHOUT writing anything, so the confirmation
+// names the things you recognise rather than a row of Mongo ids.
+
+const describeCall = async (userId, name, args = {}) => {
+  try {
+    if (name === 'reschedule_task') {
+      const found = await ownedTask(userId, args.taskId);
+      if (found.error) return `Reschedule an unknown task (${found.error})`;
+      const from = found.task.dueDate ? dateStr(found.task.dueDate) : 'no date';
+      const to = args.dueDate === 'none' ? 'no date' : args.dueDate;
+      return `Move "${found.task.title}" from ${from} to ${to}`;
+    }
+    if (name === 'complete_task' || name === 'uncomplete_task') {
+      const found = await ownedTask(userId, args.taskId);
+      if (found.error) return `${name} on an unknown task (${found.error})`;
+      return name === 'complete_task'
+        ? `Mark "${found.task.title}" done`
+        : `Reopen "${found.task.title}"`;
+    }
+    if (name === 'check_in_habit' || name === 'undo_habit_checkin') {
+      const found = await ownedHabit(userId, args.habitId);
+      if (found.error) return `${name} on an unknown habit (${found.error})`;
+      return name === 'check_in_habit'
+        ? `Check in "${found.habit.name}" for today (streak ${found.habit.streak || 0})`
+        : `Remove today's check-in from "${found.habit.name}"`;
+    }
+    return `${name}(${JSON.stringify(args)})`;
+  } catch (err) {
+    return `${name} — could not be described: ${err.message}`;
+  }
 };
 
 // ---------- dispatcher ----------
@@ -339,4 +540,11 @@ const executeTool = async (userId, name, args = {}) => {
   }
 };
 
-module.exports = { toolDefinitions, executeTool };
+module.exports = {
+  toolDefinitions,
+  executeTool,
+  describeCall,
+  LOSSY,
+  BULK_THRESHOLD,
+  MAX_LOSSY_PER_RUN,
+};
