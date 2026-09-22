@@ -22,10 +22,31 @@ const QUICK = [
   { label: 'Next wk', days: 7 },
 ];
 
-function TaskItem({ task, onToggle, onDelete, onToggleImportant, onRename, onReschedule, index = 0 }) {
+// null = let the classifier decide. An explicit kind always wins,
+// which is what effectiveKind does on the server.
+const KINDS = [
+  { value: null, label: 'Auto', hint: 'Let Aegis decide' },
+  { value: 'focus', label: 'Focus', hint: 'Desk work — gets a timer' },
+  { value: 'errand', label: 'Errand', hint: 'Somewhere to go — gets a plan' },
+  { value: 'quick', label: 'Quick', hint: 'Two minutes — gets batched' },
+  { value: 'activity', label: 'Activity', hint: 'Just start — no timer' },
+];
+
+function TaskItem({
+  task,
+  onToggle,
+  onDelete,
+  onToggleImportant,
+  onRename,
+  onReschedule,
+  onSetKind,
+  index = 0,
+}) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
+  const [kindOpen, setKindOpen] = useState(false);
   const inputRef = useRef(null);
+  const kindRef = useRef(null);
 
   useEffect(() => {
     if (editing) {
@@ -33,6 +54,21 @@ function TaskItem({ task, onToggle, onDelete, onToggleImportant, onRename, onRes
       inputRef.current?.select();
     }
   }, [editing]);
+
+  // close the kind menu on an outside click or Escape
+  useEffect(() => {
+    if (!kindOpen) return;
+    const onDown = (e) => {
+      if (kindRef.current && !kindRef.current.contains(e.target)) setKindOpen(false);
+    };
+    const onEsc = (e) => e.key === 'Escape' && setKindOpen(false);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onEsc);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onEsc);
+    };
+  }, [kindOpen]);
 
   const commit = () => {
     const clean = draft.trim();
@@ -53,6 +89,16 @@ function TaskItem({ task, onToggle, onDelete, onToggleImportant, onRename, onRes
   };
 
   const label = dueLabel(task);
+
+  // effectiveKind comes from the server virtual; task.kind is the override.
+  const shownKind = task.effectiveKind || task.kind || 'focus';
+  const isAuto = !task.kind;
+  const current = KINDS.find((k) => k.value === shownKind) || KINDS[1];
+
+  const pickKind = (value) => {
+    setKindOpen(false);
+    if (value !== (task.kind || null)) onSetKind(task._id, value);
+  };
 
   return (
     <li
@@ -94,6 +140,37 @@ function TaskItem({ task, onToggle, onDelete, onToggleImportant, onRename, onRes
         >
           {task.title}
         </span>
+      )}
+
+      {/* kind — dim while it's a guess, solid once you've set it */}
+      {!editing && !task.completed && (
+        <div className="kind-wrap" ref={kindRef}>
+          <button
+            onClick={() => setKindOpen((o) => !o)}
+            className={`kind-chip ${isAuto ? 'kind-auto' : 'kind-set'}`}
+            title={isAuto ? `Guessed: ${current.label}. Click to set it.` : `Set to ${current.label}`}
+          >
+            {current.label}
+          </button>
+
+          {kindOpen && (
+            <div className="kind-menu">
+              {KINDS.map((k) => {
+                const active = (task.kind || null) === k.value;
+                return (
+                  <button
+                    key={k.label}
+                    onClick={() => pickKind(k.value)}
+                    className={`kind-option ${active ? 'kind-option-active' : ''}`}
+                  >
+                    <span className="kind-option-label">{k.label}</span>
+                    <span className="kind-option-hint">{k.hint}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
 
       {/* quick schedule — revealed on hover */}
