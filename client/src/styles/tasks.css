@@ -122,6 +122,73 @@
     border-bottom-color: var(--border-subtle);
   }
 
+  /* ---- kind chip + menu ---- */
+  .kind-wrap { position: relative; flex-shrink: 0; }
+
+  .kind-chip {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.22rem 0.55rem;
+    border-radius: 0.45rem;
+    white-space: nowrap;
+    transition: all 0.25s var(--ease);
+  }
+
+  /* a guess — dashed and quiet, so you can see Aegis is inferring */
+  .kind-auto {
+    color: var(--text-faint);
+    border: 1px dashed var(--border-subtle);
+    background: transparent;
+  }
+  .kind-auto:hover { color: var(--gold); border-color: var(--gold); }
+
+  /* your choice — solid */
+  .kind-set {
+    color: var(--gold);
+    border: 1px solid rgba(212, 175, 122, 0.4);
+    background: rgba(212, 175, 122, 0.1);
+  }
+  .kind-set:hover { border-color: var(--gold); }
+
+  .kind-menu {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    z-index: 40;
+    width: 12.5rem;
+    padding: 0.3rem;
+    border-radius: 0.8rem;
+    background: rgba(20, 16, 31, 0.97);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+    animation: kindIn 0.28s var(--ease) both;
+  }
+  @keyframes kindIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .kind-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    width: 100%;
+    text-align: left;
+    padding: 0.45rem 0.6rem;
+    border-radius: 0.55rem;
+    transition: background 0.2s var(--ease);
+  }
+  .kind-option:hover { background: rgba(255, 255, 255, 0.05); }
+  .kind-option-active { background: rgba(212, 175, 122, 0.12); }
+
+  .kind-option-label { font-size: 0.8rem; color: var(--text-display); }
+  .kind-option-active .kind-option-label { color: var(--gold); }
+  .kind-option-hint { font-size: 0.66rem; color: var(--text-faint); }
+
   /* quick schedule chips */
   .quick-sched {
     display: flex;

@@ -134,6 +134,21 @@ function Tasks() {
     }
   };
 
+  // Unlike the other handlers, this one takes the server's response back.
+  // effectiveKind is a virtual we cannot compute here — when you choose
+  // "Auto" only the server knows what the classifier will guess.
+  const handleSetKind = async (id, kind) => {
+    const original = tasks.find((t) => t._id === id);
+    setTasks((prev) => prev.map((t) => (t._id === id ? { ...t, kind } : t)));
+    try {
+      const res = await api.put(`/tasks/${id}`, { kind });
+      setTasks((prev) => prev.map((t) => (t._id === id ? res.data : t)));
+    } catch (err) {
+      setTasks((prev) => prev.map((t) => (t._id === id ? original : t)));
+      console.error(err);
+    }
+  };
+
   const handleDelete = (id) => {
     const task = tasks.find((t) => t._id === id);
     if (!task) return;
@@ -332,6 +347,7 @@ function Tasks() {
                           onToggleImportant={handleToggleImportant}
                           onRename={handleRename}
                           onReschedule={handleReschedule}
+                          onSetKind={handleSetKind}
                         />
                       ))}
                     </ul>
@@ -364,6 +380,7 @@ function Tasks() {
                       onToggleImportant={handleToggleImportant}
                       onRename={handleRename}
                       onReschedule={handleReschedule}
+                      onSetKind={handleSetKind}
                     />
                   ))}
                 </ul>

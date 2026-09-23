@@ -91,7 +91,7 @@ function TaskItem({
   const label = dueLabel(task);
 
   // effectiveKind comes from the server virtual; task.kind is the override.
-  const shownKind = task.effectiveKind || task.kind || 'focus';
+  const shownKind = task.kind || task.effectiveKind || 'focus';
   const isAuto = !task.kind;
   const current = KINDS.find((k) => k.value === shownKind) || KINDS[1];
 
