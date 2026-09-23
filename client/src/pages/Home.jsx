@@ -8,7 +8,9 @@ import LifeTimeline from '../components/LifeTimeline';
 import MoreCards from '../components/MoreCards';
 import MissionCard from '../components/MissionCard';
 import FocusMode from '../components/FocusMode';
+import EveningCheckIn from '../components/EveningCheckIn';
 import { buildSummary } from '../utils/summary';
+import { isEvening } from '../utils/eveningPrompt';
 import '../styles/home.css';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
@@ -42,6 +44,12 @@ function Home() {
   const [focusSession, setFocusSession] = useState(null);
   const [missionKey, setMissionKey] = useState(0);
 
+  // evening check-in — only looked up after dark
+  const [wroteToday, setWroteToday] = useState(null); // null = not checked yet
+  const [eveningDismissed, setEveningDismissed] = useState(
+    () => localStorage.getItem('aegis:eveningDismissed') === todayStr()
+  );
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -59,6 +67,30 @@ function Home() {
     };
     fetchData();
   }, []);
+
+  // Only fetch the diary once it's actually evening — no point costing a
+  // request at 9am for a card that cannot render until 8pm.
+  useEffect(() => {
+    if (!isEvening() || eveningDismissed) return;
+    let cancelled = false;
+
+    api
+      .get('/diary')
+      .then((res) => {
+        if (cancelled) return;
+        setWroteToday(res.data.some((e) => e.entryDate === todayStr()));
+      })
+      .catch(() => !cancelled && setWroteToday(true)); // fail quiet, never nag
+
+    return () => {
+      cancelled = true;
+    };
+  }, [eveningDismissed]);
+
+  const dismissEvening = () => {
+    localStorage.setItem('aegis:eveningDismissed', todayStr());
+    setEveningDismissed(true);
+  };
 
   // re-read tasks after the mission card changes something
   const reloadTasks = async () => {
@@ -164,6 +196,12 @@ function Home() {
     if (taskCompleted) await reloadTasks();
   };
 
+  // the check-in writes a diary entry, which may have drawn tasks out of it
+  const handleEveningSaved = async () => {
+    setWroteToday(true);
+    await reloadAll();
+  };
+
   const overdueTasks = tasks.filter(isOverdue).sort(byTime);
   const dueTodayTasks = tasks.filter(isDueToday).sort(byTime);
   const addedTodayTasks = tasks.filter(isAddedToday).sort(byTime);
@@ -177,6 +215,8 @@ function Home() {
   const completedToday = tasks.filter(
     (t) => t.completed && dayOf(t.updatedAt) === todayStr()
   ).length;
+
+  const habitsDoneToday = habits.filter(isHabitDoneToday).length;
 
   const bestStreak = habits.reduce((max, h) => Math.max(max, h.streak || 0), 0);
 
@@ -256,12 +296,27 @@ function Home() {
             overdueCount: overdueTasks.length,
             completedToday,
             bestStreak,
-            habitsDoneToday: habits.filter(isHabitDoneToday).length,
+            habitsDoneToday,
             habitsTotal: habits.length,
             hour: new Date().getHours(),
           })}
         </p>
       </div>
+
+      {/* Evening check-in — the one thing that feeds tasks, memory and drift at once */}
+      {isEvening() && !eveningDismissed && wroteToday === false && (
+        <EveningCheckIn
+          stats={{
+            completedToday,
+            openCount: pendingTasks.length,
+            overdueCount: overdueTasks.length,
+            habitsDone: habitsDoneToday,
+            habitsTotal: habits.length,
+          }}
+          onSaved={handleEveningSaved}
+          onDismiss={dismissEvening}
+        />
+      )}
 
       {/* Today's mission */}
       <MissionCard
