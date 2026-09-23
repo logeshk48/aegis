@@ -17,21 +17,37 @@ const createEntry = async (req, res) => {
       return res.status(400).json({ message: 'Diary content is required' });
     }
 
-    // --- extract tasks (non-critical, fails soft) ---
+    // Two independent AI calls. Run them together — one after the other
+    // meant writing an entry waited on two round trips.
+    // allSettled so neither can take the entry down with it.
+    const [taskResult, memoryResult] = await Promise.allSettled([
+      parseTasksFromText(content),
+      extractAndStoreMemories(req.user._id, content, 'diary'),
+    ]);
+
     let createdTasks = [];
-    try {
-      const parsedTasks = await parseTasksFromText(content);
-      if (parsedTasks.length > 0) {
-        const tasksToCreate = parsedTasks.map((task) => ({
+    if (taskResult.status === 'fulfilled' && taskResult.value?.length > 0) {
+      try {
+        const tasksToCreate = taskResult.value.map((task) => ({
           user: req.user._id,
           title: task.title,
           priority: task.priority,
           dueDate: task.dueDate,
         }));
         createdTasks = await Task.insertMany(tasksToCreate);
+      } catch (insertErr) {
+        console.error('Task insert failed (entry still saved):', insertErr.message);
       }
-    } catch (aiErr) {
-      console.error('Task extraction failed (entry still saved):', aiErr.message);
+    } else if (taskResult.status === 'rejected') {
+      console.error('Task extraction failed (entry still saved):', taskResult.reason?.message);
+    }
+
+    const learned =
+      memoryResult.status === 'fulfilled' && Array.isArray(memoryResult.value)
+        ? memoryResult.value
+        : [];
+    if (memoryResult.status === 'rejected') {
+      console.error('Memory extraction failed (entry still saved):', memoryResult.reason?.message);
     }
 
     // --- save the entry ---
@@ -41,14 +57,6 @@ const createEntry = async (req, res) => {
       entryDate: entryDate || getToday(),
       extractedTaskCount: createdTasks.length,
     });
-
-    // --- learn about the user (non-critical, fails soft) ---
-    let learned = [];
-    try {
-      learned = await extractAndStoreMemories(req.user._id, content, 'diary');
-    } catch (memErr) {
-      console.error('Memory extraction failed (entry still saved):', memErr.message);
-    }
 
     // --- compose the response message ---
     const parts = [];
