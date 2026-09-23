@@ -1,6 +1,7 @@
 const Task = require('../models/Task');
 const Habit = require('../models/Habit');
 const DiaryEntry = require('../models/DiaryEntry');
+const { saveEntry } = require('./diaryService');
 
 const DAY = 86400000;
 const dateStr = (d) => new Date(d).toISOString().split('T')[0];
@@ -191,6 +192,24 @@ const toolDefinitions = [
           limit: { type: 'number', description: 'Max entries to return (default 5)' },
         },
         required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'write_diary',
+      description:
+        "Save what the user told you about their day as a diary entry. Use this whenever they are recounting what happened, how they felt, or what is on their mind — not when they are giving you an instruction. Pass their words through EXACTLY as they wrote them: never summarise, tidy or rephrase, because this is their record and the memory extraction reads the original wording. Saving also draws out any tasks mentioned in the text, so do NOT also call create_task for things already in what you saved.",
+      parameters: {
+        type: 'object',
+        properties: {
+          content: {
+            type: 'string',
+            description: "The user's own words, verbatim.",
+          },
+        },
+        required: ['content'],
       },
     },
   },
@@ -462,6 +481,20 @@ const executors = {
         excerpt:
           e.content.length > 300 ? e.content.slice(0, 300) + '…' : e.content,
       })),
+    };
+  },
+
+  // Routes through the same service the diary page uses, so an entry made
+  // by talking to the agent is indistinguishable from one typed in — same
+  // task extraction, same memory extraction, same drift signal.
+  write_diary: async (userId, args) => {
+    const result = await saveEntry(userId, { content: args.content });
+    return {
+      saved: true,
+      entryDate: result.entry.entryDate,
+      tasksCreated: result.createdTasks.map((t) => t.title),
+      memoriesLearned: result.learned.length,
+      summary: result.message,
     };
   },
 
