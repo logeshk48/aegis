@@ -12,12 +12,24 @@ import { buildSummary } from '../utils/summary';
 import '../styles/home.css';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
+const dayOf = (d) => new Date(d).toISOString().split('T')[0];
 
-const isOverdue = (t) =>
-  t.dueDate && !t.completed && new Date(t.dueDate).toISOString().split('T')[0] < todayStr();
+const isOverdue = (t) => t.dueDate && !t.completed && dayOf(t.dueDate) < todayStr();
 
-const isDueToday = (t) =>
-  t.dueDate && !t.completed && new Date(t.dueDate).toISOString().split('T')[0] === todayStr();
+const isDueToday = (t) => t.dueDate && !t.completed && dayOf(t.dueDate) === todayStr();
+
+// Added today with no date on it — usually something the agent just made.
+// Without this it exists in the database and nowhere on screen.
+const isAddedToday = (t) =>
+  !t.completed && !t.dueDate && t.createdAt && dayOf(t.createdAt) === todayStr();
+
+// Timed things first, in clock order; everything else after, newest first.
+const byTime = (a, b) => {
+  const at = a.scheduledAt ? new Date(a.scheduledAt).getTime() : Infinity;
+  const bt = b.scheduledAt ? new Date(b.scheduledAt).getTime() : Infinity;
+  if (at !== bt) return at - bt;
+  return new Date(b.createdAt) - new Date(a.createdAt);
+};
 
 function Home() {
   const userName = localStorage.getItem('userName') || 'there';
@@ -53,6 +65,19 @@ function Home() {
     try {
       const res = await api.get('/tasks');
       setTasks(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // the agent can touch tasks AND habits, so after it acts we re-read both
+  // and rebuild the mission — its top task may have just been completed
+  const reloadAll = async () => {
+    try {
+      const [t, h] = await Promise.all([api.get('/tasks'), api.get('/habits')]);
+      setTasks(t.data);
+      setHabits(h.data);
+      setMissionKey((k) => k + 1);
     } catch (err) {
       console.error(err);
     }
@@ -139,12 +164,18 @@ function Home() {
     if (taskCompleted) await reloadTasks();
   };
 
-  const overdueTasks = tasks.filter(isOverdue);
-  const dueTodayTasks = tasks.filter(isDueToday);
+  const overdueTasks = tasks.filter(isOverdue).sort(byTime);
+  const dueTodayTasks = tasks.filter(isDueToday).sort(byTime);
+  const addedTodayTasks = tasks.filter(isAddedToday).sort(byTime);
   const pendingTasks = tasks.filter((t) => !t.completed);
 
+  const nothingToday =
+    overdueTasks.length === 0 &&
+    dueTodayTasks.length === 0 &&
+    addedTodayTasks.length === 0;
+
   const completedToday = tasks.filter(
-    (t) => t.completed && new Date(t.updatedAt).toISOString().split('T')[0] === todayStr()
+    (t) => t.completed && dayOf(t.updatedAt) === todayStr()
   ).length;
 
   const bestStreak = habits.reduce((max, h) => Math.max(max, h.streak || 0), 0);
@@ -166,6 +197,46 @@ function Home() {
     month: 'long',
     day: 'numeric',
   });
+
+  // one row, three flavours — keeps the three lists from duplicating markup
+  const TaskRow = ({ task, tone }) => (
+    <div
+      className={`lux-row ${tone === 'alert' ? 'lux-row-alert' : ''} ${
+        completingId === task._id ? 'row-completing row-leaving' : ''
+      }`}
+    >
+      {completingId === task._id ? (
+        <span className="check-burst">✓</span>
+      ) : (
+        <input
+          type="checkbox"
+          checked={task.completed}
+          onChange={() => handleToggle(task._id)}
+          className="lux-check"
+        />
+      )}
+      <span className="flex-1 text-sm" style={{ color: 'var(--text-display)' }}>
+        {task.title}
+      </span>
+
+      {completingId !== task._id && tone === 'alert' && (
+        <span className="eyebrow" style={{ color: 'var(--rose)' }}>Overdue</span>
+      )}
+
+      {completingId !== task._id && tone !== 'alert' && task.scheduledAt && (
+        <span className="eyebrow" style={{ color: 'var(--gold)' }}>
+          {new Date(task.scheduledAt).toLocaleTimeString([], {
+            hour: 'numeric',
+            minute: '2-digit',
+          })}
+        </span>
+      )}
+
+      {completingId !== task._id && tone === 'new' && !task.scheduledAt && (
+        <span className="eyebrow" style={{ color: 'var(--text-faint)' }}>New</span>
+      )}
+    </div>
+  );
 
   if (loading) {
     return <p className="body-sm max-w-4xl mx-auto">Loading your day…</p>;
@@ -242,65 +313,20 @@ function Home() {
             )}
           </div>
 
-          {overdueTasks.length === 0 && dueTodayTasks.length === 0 ? (
+          {nothingToday ? (
             <div className="lux-empty">Nothing scheduled for today.</div>
           ) : (
             <div className="space-y-2">
               {overdueTasks.map((task) => (
-                <div
-                  key={task._id}
-                  className={`lux-row lux-row-alert ${
-                    completingId === task._id ? 'row-completing row-leaving' : ''
-                  }`}
-                >
-                  {completingId === task._id ? (
-                    <span className="check-burst">✓</span>
-                  ) : (
-                    <input
-                      type="checkbox"
-                      checked={task.completed}
-                      onChange={() => handleToggle(task._id)}
-                      className="lux-check"
-                    />
-                  )}
-                  <span className="flex-1 text-sm" style={{ color: 'var(--text-display)' }}>
-                    {task.title}
-                  </span>
-                  {completingId !== task._id && (
-                    <span className="eyebrow" style={{ color: 'var(--rose)' }}>Overdue</span>
-                  )}
-                </div>
+                <TaskRow key={task._id} task={task} tone="alert" />
               ))}
 
               {dueTodayTasks.map((task) => (
-                <div
-                  key={task._id}
-                  className={`lux-row ${
-                    completingId === task._id ? 'row-completing row-leaving' : ''
-                  }`}
-                >
-                  {completingId === task._id ? (
-                    <span className="check-burst">✓</span>
-                  ) : (
-                    <input
-                      type="checkbox"
-                      checked={task.completed}
-                      onChange={() => handleToggle(task._id)}
-                      className="lux-check"
-                    />
-                  )}
-                  <span className="flex-1 text-sm" style={{ color: 'var(--text-display)' }}>
-                    {task.title}
-                  </span>
-                  {task.scheduledAt && (
-                    <span className="eyebrow" style={{ color: 'var(--gold)' }}>
-                      {new Date(task.scheduledAt).toLocaleTimeString([], {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  )}
-                </div>
+                <TaskRow key={task._id} task={task} tone="today" />
+              ))}
+
+              {addedTodayTasks.map((task) => (
+                <TaskRow key={task._id} task={task} tone="new" />
               ))}
             </div>
           )}
@@ -350,9 +376,9 @@ function Home() {
       {/* Read · Memory · Stats */}
       <MoreCards completionRate={overallRate} />
 
-      {/* Ask Aegis */}
+      {/* Ask Aegis — tells Home to re-read after the agent changes anything */}
       <div className="mb-8">
-        <AskAegis />
+        <AskAegis onChanged={reloadAll} />
       </div>
 
       {/* Full-screen focus — above everything, including the nav */}

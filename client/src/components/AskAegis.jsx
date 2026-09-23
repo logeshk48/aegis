@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { askAegis } from '../services/aiApi';
+import { runAgent, approveAgentProposal, rejectAgentProposal } from '../services/aiApi';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 
-function AskAegis() {
+function AskAegis({ onChanged }) {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
+  const [proposal, setProposal] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const inputRef = useRef(null);
@@ -36,10 +37,11 @@ function AskAegis() {
     return () => window.removeEventListener('keydown', handleKey);
   }, []);
 
+  // now that it can act, the prompts should show that
   const suggestions = [
     'What needs my attention?',
-    'Anything overdue?',
-    'How am I doing this week?',
+    'Add gym at 6pm',
+    'Move anything overdue to tomorrow',
   ];
 
   const handleAsk = async (e, presetQuestion) => {
@@ -50,13 +52,53 @@ function AskAegis() {
     setLoading(true);
     setError('');
     setAnswer('');
+    setProposal(null);
     if (presetQuestion) setQuestion(presetQuestion);
 
     try {
-      const data = await askAegis(q);
-      setAnswer(data.answer);
+      const data = await runAgent(q);
+      setAnswer(data.reply);
+
+      if (data.needsApproval && data.proposal) {
+        setProposal(data.proposal);
+      } else if (data.steps?.length) {
+        // it touched something — let Home re-read
+        onChanged?.();
+      }
+
+      if (!presetQuestion) setQuestion('');
     } catch (err) {
       setError('Could not get an answer. Try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!proposal) return;
+    setLoading(true);
+    try {
+      const data = await approveAgentProposal(proposal.id);
+      setAnswer(data.error || data.reply);
+      setProposal(null);
+      onChanged?.();
+    } catch (err) {
+      setError('Could not apply those changes.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!proposal) return;
+    setLoading(true);
+    try {
+      const data = await rejectAgentProposal(proposal.id);
+      setAnswer(data.reply);
+      setProposal(null);
+    } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
@@ -78,7 +120,7 @@ function AskAegis() {
           /
         </span>
       </div>
-      <p className="body-sm mb-4">Anything about your tasks, rituals, or diary.</p>
+      <p className="body-sm mb-4">Ask about your day, or tell it what to change.</p>
 
       <form onSubmit={handleAsk} className="flex gap-2">
         <input
@@ -86,7 +128,7 @@ function AskAegis() {
           type="text"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Ask anything about your day…"
+          placeholder="Ask anything, or say what to do…"
           className="input-lux flex-1"
         />
 
@@ -160,9 +202,41 @@ function AskAegis() {
             borderLeft: '2px solid var(--gold)',
           }}
         >
-          <p className="body-text" style={{ color: 'var(--text-display)' }}>
+          <p className="body-text" style={{ color: 'var(--text-display)', whiteSpace: 'pre-line' }}>
             {answer}
           </p>
+        </div>
+      )}
+
+      {/* Nothing has been changed at this point — these are still proposals */}
+      {proposal && (
+        <div
+          className="mt-3 px-4 py-3 rounded-xl animate-rise"
+          style={{
+            background: 'rgba(201, 139, 139, 0.06)',
+            border: '1px solid rgba(201, 139, 139, 0.28)',
+          }}
+        >
+          <p className="eyebrow mb-2" style={{ color: 'var(--rose)' }}>
+            Waiting for you
+          </p>
+
+          <ul className="space-y-1 mb-3">
+            {proposal.actions.map((a, i) => (
+              <li key={i} className="body-sm" style={{ color: 'var(--text-body)' }}>
+                — {a}
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex gap-2">
+            <button onClick={handleApprove} disabled={loading} className="btn-gold">
+              {loading ? 'Applying…' : 'Do it'}
+            </button>
+            <button onClick={handleReject} disabled={loading} className="btn-outline">
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </div>
