@@ -1,0 +1,71 @@
+/* ===== SLEEP ===== */
+
+@layer components {
+  .sleep-card {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    padding: 1.35rem 1.5rem;
+    border-radius: 1.25rem;
+    background: linear-gradient(150deg, #191233 0%, var(--bg-raised) 58%, var(--bg-base) 100%);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .sleep-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 6%; right: 6%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #6B4D8F, transparent);
+    opacity: 0.55;
+  }
+
+  .sleep-dur {
+    color: var(--text-muted);
+    font-size: 0.8em;
+  }
+
+  .sleep-edit {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+    transition: color 0.3s var(--ease);
+  }
+  .sleep-edit:hover { color: var(--gold); }
+
+  .sleep-fields {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .sleep-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .xs-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .sleep-rhythm {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .numeral-sm {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 1.15rem;
+    color: var(--gold);
+    line-height: 1;
+  }
+}
