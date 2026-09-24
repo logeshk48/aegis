@@ -9,6 +9,7 @@ import MoreCards from '../components/MoreCards';
 import MissionCard from '../components/MissionCard';
 import FocusMode from '../components/FocusMode';
 import EveningCheckIn from '../components/EveningCheckIn';
+import SleepCard from '../components/SleepCard';
 import { buildSummary } from '../utils/summary';
 import { isEvening } from '../utils/eveningPrompt';
 import '../styles/home.css';
@@ -302,6 +303,9 @@ function Home() {
           })}
         </p>
       </div>
+
+      {/* Sleep — the upstream signal. Asks at night, confirms in the morning. */}
+      <SleepCard onChanged={reloadAll} />
 
       {/* Evening check-in — the one thing that feeds tasks, memory and drift at once */}
       {isEvening() && !eveningDismissed && wroteToday === false && (
