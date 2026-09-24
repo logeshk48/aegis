@@ -19,6 +19,7 @@ const readRoutes = require('./routes/readRoutes');
 const patternRoutes = require('./routes/patternRoutes');
 const agentRoutes = require('./routes/agentRoutes');
 const focusRoutes = require('./routes/focusRoutes');
+const sleepRoutes = require('./routes/sleepRoutes');
 
 const app = express();
 
@@ -63,6 +64,7 @@ app.use('/api/read', readRoutes);
 app.use('/api/patterns', patternRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/focus', focusRoutes);
+app.use('/api/sleep', sleepRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Hello from your server! 🚀' });
