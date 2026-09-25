@@ -2,6 +2,7 @@ const Task = require('../models/Task');
 const Habit = require('../models/Habit');
 const DiaryEntry = require('../models/DiaryEntry');
 const { saveEntry } = require('./diaryService');
+const { createTaskIfNew } = require('./taskService');
 
 const DAY = 86400000;
 const dateStr = (d) => new Date(d).toISOString().split('T')[0];
@@ -55,7 +56,7 @@ const toolDefinitions = [
     function: {
       name: 'create_task',
       description:
-        'Create a new task for the user. Use when they ask for something to be added, or when a plan needs a concrete step.',
+        'Create a new task for the user. Use when they ask for something to be added, or when a plan needs a concrete step. If a very similar task is already open this will decline and tell you so — say that to the user rather than trying a reworded title.',
       parameters: {
         type: 'object',
         properties: {
@@ -313,12 +314,21 @@ const executors = {
       dueDate = new Date(`${args.dueDate}T12:00:00.000Z`);
     }
 
-    const task = await Task.create({
-      user: userId,
+    const { task, duplicateOf } = await createTaskIfNew(userId, {
       title: args.title.trim(),
       dueDate,
       important: !!args.important,
     });
+
+    // Returned as data, not an error — the model should tell the user it
+    // was already there rather than silently claiming it made a new one.
+    if (!task) {
+      return {
+        created: false,
+        alreadyExists: true,
+        existingTitle: duplicateOf.title,
+      };
+    }
 
     return {
       created: true,
@@ -493,6 +503,7 @@ const executors = {
       saved: true,
       entryDate: result.entry.entryDate,
       tasksCreated: result.createdTasks.map((t) => t.title),
+      tasksSkipped: result.skippedTasks.map((s) => s.title),
       memoriesLearned: result.learned.length,
       summary: result.message,
     };

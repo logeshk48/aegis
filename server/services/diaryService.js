@@ -1,7 +1,7 @@
 const DiaryEntry = require('../models/DiaryEntry');
-const Task = require('../models/Task');
 const { parseTasksFromText } = require('./aiService');
 const { extractAndStoreMemories } = require('./memoryService');
+const { createTaskIfNew } = require('./taskService');
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
@@ -27,19 +27,25 @@ const saveEntry = async (userId, { content, entryDate } = {}) => {
     extractAndStoreMemories(userId, text, 'diary'),
   ]);
 
-  let createdTasks = [];
+  const createdTasks = [];
+  const skippedTasks = [];
+
   if (taskResult.status === 'fulfilled' && taskResult.value?.length > 0) {
-    try {
-      createdTasks = await Task.insertMany(
-        taskResult.value.map((t) => ({
-          user: userId,
-          title: t.title,
-          priority: t.priority,
-          dueDate: t.dueDate,
-        }))
-      );
-    } catch (insertErr) {
-      console.error('Task insert failed (entry still saved):', insertErr.message);
+    // Sequential rather than insertMany: each one has to be checked against
+    // what is already open AND against the others in this same batch.
+    // Mentioning the dentist in two entries should not give you two tasks.
+    for (const t of taskResult.value) {
+      try {
+        const { task, duplicateOf } = await createTaskIfNew(
+          userId,
+          { title: t.title, priority: t.priority, dueDate: t.dueDate },
+          createdTasks
+        );
+        if (task) createdTasks.push(task);
+        else skippedTasks.push({ title: t.title, existing: duplicateOf.title });
+      } catch (err) {
+        console.error('Task create failed (entry still saved):', err.message);
+      }
     }
   } else if (taskResult.status === 'rejected') {
     console.error('Task extraction failed (entry still saved):', taskResult.reason?.message);
@@ -64,6 +70,9 @@ const saveEntry = async (userId, { content, entryDate } = {}) => {
   if (createdTasks.length > 0) {
     parts.push(`${createdTasks.length} task${createdTasks.length > 1 ? 's' : ''} drawn out`);
   }
+  if (skippedTasks.length > 0) {
+    parts.push(`${skippedTasks.length} already on your list`);
+  }
   if (learned.length > 0) {
     parts.push(`${learned.length} thing${learned.length > 1 ? 's' : ''} learned about you`);
   }
@@ -71,6 +80,7 @@ const saveEntry = async (userId, { content, entryDate } = {}) => {
   return {
     entry,
     createdTasks,
+    skippedTasks,
     learned,
     message: parts.length > 0 ? `Kept — ${parts.join(', ')}.` : 'Kept.',
   };
