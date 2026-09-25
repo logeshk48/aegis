@@ -46,6 +46,16 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // How many separate DAYS this has been the mission and survived it.
+    // Not page loads: refreshing Home ten times is one offer.
+    offeredDays: {
+      type: Number,
+      default: 0,
+    },
+    lastOfferedOn: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

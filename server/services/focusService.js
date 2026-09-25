@@ -3,6 +3,7 @@ const Task = require('../models/Task');
 const { calculateDrift } = require('./driftService');
 const { extractAndStoreMemories } = require('./memoryService');
 const { classifyTask, prepFor } = require('../utils/classifyTask');
+const { staleFor } = require('../utils/staleness');
 
 const STALE_GRACE_MS = 30 * 60 * 1000; // 30 min past planned end
 const PAUSE_LIMIT_MS = 3 * 60 * 60 * 1000; // paused 3h → closed
@@ -91,6 +92,7 @@ const shapeTask = (t) => ({
   kind: kindOf(t),
   kindIsManual: !!t.kind,
   scheduledAt: t.scheduledAt || null,
+  offeredDays: t.offeredDays || 0,
 });
 
 const shapeSession = (s) => ({
@@ -137,6 +139,22 @@ const findOwned = async (userId, id) => {
   return s;
 };
 
+/**
+ * Notes that this task was put in front of the user today.
+ * Guarded by the date so ten page loads count as one offer — otherwise
+ * "how many days have you skipped this" becomes "how often do you refresh".
+ */
+const recordOffer = async (task) => {
+  const today = todayStr();
+  if (task.lastOfferedOn === today) return task.offeredDays || 0;
+
+  task.lastOfferedOn = today;
+  task.offeredDays = (task.offeredDays || 0) + 1;
+  await task.save();
+
+  return task.offeredDays;
+};
+
 // ---------- the mission ----------
 // The mission is your most important unplanned task, and its FORMAT follows
 // what kind of task it is:
@@ -181,6 +199,9 @@ const getMission = async (userId) => {
   if (top) {
     const kind = kindOf(top);
 
+    // count today's offer before shaping, so the number in `stale` includes it
+    const offeredDays = await recordOffer(top);
+
     if (kind === 'quick') {
       primary = {
         type: 'quick',
@@ -198,6 +219,11 @@ const getMission = async (userId) => {
     } else {
       primary = { type: 'focus', task: shapeTask(top) };
     }
+
+    // Null until the third day. Aegis says nothing about a task you have
+    // skipped once — everyone skips one.
+    primary.stale = staleFor({ offeredDays, kind });
+    primary.staleTaskId = top._id.toString();
   }
 
   // the timed desk mission — only ever on focus-kind tasks
