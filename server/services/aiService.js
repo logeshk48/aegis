@@ -1,10 +1,13 @@
 const Groq = require('groq-sdk');
+const Habit = require('../models/Habit');
+const Task = require('../models/Task');
 const {
   buildTaskParsePrompt,
   buildQuestionPrompt,
   buildSuggestionsPrompt,
 } = require('./prompts');
 const { buildUserContext } = require('./contextService');
+const { findDuplicate } = require('../utils/taskSimilarity');
 
 // generic function: send any prompt, get the AI's text reply
 const askAI = async (prompt) => {
@@ -107,10 +110,34 @@ const generateSuggestions = async (userId) => {
 
   if (!Array.isArray(parsed)) return [];
 
-  return parsed
-    .map(validateSuggestion)
-    .filter((s) => s !== null)
-    .slice(0, 4);
+  const valid = parsed.map(validateSuggestion).filter((s) => s !== null);
+  if (valid.length === 0) return [];
+
+  // The context already lists what exists, and the model still suggested
+  // "Write Diary" to someone whose Rituals contain "write diary". Telling it
+  // again would be hoping. Checking is not.
+  const [habits, openTasks] = await Promise.all([
+    Habit.find({ user: userId }).select('name').lean(),
+    Task.find({ user: userId, completed: false }).select('title').lean(),
+  ]);
+
+  // findDuplicate reads a `title` field, so habits are shaped to match
+  const habitTitles = habits.map((h) => ({ title: h.name }));
+
+  const fresh = valid.filter((s) => {
+    const against = s.type === 'habit' ? habitTitles : openTasks;
+    const existing = findDuplicate(against, s.title);
+
+    if (existing) {
+      console.log(`Suggestion dropped — "${s.title}" already exists as "${existing.title}"`);
+      return false;
+    }
+    return true;
+  });
+
+  // Returning nothing is a valid answer. Suggesting things you already have
+  // to avoid an empty rail is how an assistant stops being believed.
+  return fresh.slice(0, 4);
 };
 
 module.exports = {
