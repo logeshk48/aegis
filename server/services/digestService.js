@@ -3,6 +3,8 @@ const Habit = require('../models/Habit');
 const FocusSession = require('../models/FocusSession');
 const { getDriftReport } = require('./driftService');
 const { generateRead } = require('./readService');
+const { getSleepState } = require('./sleepService');
+const { staleFor, NOTICED_AT } = require('../utils/staleness');
 
 const DAY = 86400000;
 const TZ = process.env.DIGEST_TZ || 'Asia/Kolkata';
@@ -47,7 +49,7 @@ const buildDigestForUser = async (user) => {
   const yesterday = new Date(now.getTime() - DAY);
 
   // --- gather ---
-  const [tasks, habits, planned, focusSessions, doneYesterday] = await Promise.all([
+  const [tasks, habits, planned, focusSessions, doneYesterday, lingering] = await Promise.all([
     Task.find({ user: user._id, completed: false }).sort({ dueDate: 1 }).limit(15),
     Habit.find({ user: user._id }),
     Task.find({
@@ -65,6 +67,15 @@ const buildDigestForUser = async (user) => {
       completed: true,
       updatedAt: { $gte: yesterday },
     }),
+    // things that have been the mission on several separate mornings
+    // and are still here
+    Task.find({
+      user: user._id,
+      completed: false,
+      offeredDays: { $gte: NOTICED_AT },
+    })
+      .sort({ offeredDays: -1 })
+      .limit(3),
   ]);
 
   const focusMinutes = Math.round(
@@ -86,9 +97,16 @@ const buildDigestForUser = async (user) => {
   const bestStreak = habits.reduce((max, h) => Math.max(max, h.streak || 0), 0);
   const habitsPending = habits.filter((h) => !h.completedDates?.includes(today));
 
-  // --- what Aegis thinks (fails soft — the email still sends without it) ---
+  const stale = lingering
+    .map((t) => ({ task: t, stale: staleFor({ offeredDays: t.offeredDays, kind: t.effectiveKind }) }))
+    .filter((s) => s.stale);
+
+  const stuck = stale.find((s) => s.stale.level === 'stuck') || null;
+
+  // --- what Aegis thinks (all fail soft — the email still sends without them) ---
   let drift = null;
   let read = null;
+  let sleep = null;
 
   try {
     drift = await getDriftReport(user._id);
@@ -102,12 +120,36 @@ const buildDigestForUser = async (user) => {
     console.error('Digest: read unavailable —', err.message);
   }
 
+  try {
+    sleep = await getSleepState(user._id);
+  } catch (err) {
+    console.error('Digest: sleep unavailable —', err.message);
+  }
+
   const state = drift?.state || 'unknown';
   const accent = STATE_COLOR[state];
+
+  // Sleep frames the whole day, so it sits high. Silent for anyone who has
+  // never logged a night — a brief that nags about an unused feature every
+  // morning is a brief you stop opening.
+  const sleepLine = (() => {
+    if (!sleep) return '';
+    if (sleep.lastNight?.confirmed && sleep.lastNight.minutes) return sleep.capacity.reason;
+    if (sleep.pendingWake && sleep.lastNight?.sleepAt) {
+      return `You turned in at ${timeIn(sleep.lastNight.sleepAt)}. The night is still open — close it when you are up.`;
+    }
+    if (sleep.needsConfirm && sleep.lastNight?.minutes) {
+      const h = (sleep.lastNight.minutes / 60).toFixed(1);
+      return `Looks like about ${h} hours last night. Confirm it in Aegis and it starts counting.`;
+    }
+    if (sleep.rhythm?.nights > 0) return 'No sleep logged last night.';
+    return '';
+  })();
 
   // the single most important thing today
   const firstStep =
     drift?.plan?.[0]?.step ||
+    (stuck ? `Decide on "${stuck.task.title}" — do it today, or let it go` : null) ||
     (planned.length > 0 ? `${planned[0].title} at ${timeIn(planned[0].scheduledAt)}` : null) ||
     (overdue.length > 0 ? `Clear "${overdue[0].title}"` : null) ||
     (habitsPending.length > 0 ? `Tend "${habitsPending[0].name}"` : null) ||
@@ -132,6 +174,10 @@ const buildDigestForUser = async (user) => {
           .join('')}
         ${overdue.length > 0 ? `<li>${plural(overdue.length, 'task')} past their date</li>` : ''}
       </ul>`
+    : '';
+
+  const sleepHtml = sleepLine
+    ? `<p style="margin:16px 0 0;padding:12px 14px;background:rgba(107,77,143,0.14);border-radius:10px;font-size:13px;line-height:1.7;color:#c9c2d4;">${sleepLine}</p>`
     : '';
 
   const plannedHtml =
@@ -159,6 +205,21 @@ const buildDigestForUser = async (user) => {
         ])
       : '';
 
+  // Naming it is the whole intervention. A task quietly re-offered for the
+  // fifth morning is the one you are least likely to notice yourself.
+  const staleHtml =
+    stale.length > 0
+      ? label('Still waiting') +
+        list(
+          stale.map(
+            (s) =>
+              `<li>${s.task.title} <span style="color:${
+                s.stale.level === 'stuck' ? '#c98b8b' : '#8a819e'
+              };font-size:12px;">— ${plural(s.stale.offeredDays, 'morning')} running</span></li>`
+          )
+        )
+      : '';
+
   const habitHtml =
     habitsPending.length > 0
       ? label('Rituals waiting') +
@@ -180,6 +241,14 @@ const buildDigestForUser = async (user) => {
   if (focusMinutes > 0) footerBits.push(`You focused ${plural(focusMinutes, 'minute')} yesterday.`);
   if (doneYesterday > 0) footerBits.push(`You finished ${plural(doneYesterday, 'thing')}.`);
   if (bestStreak > 0) footerBits.push(`Longest streak: ${plural(bestStreak, 'day')}.`);
+  if (sleep?.rhythm?.bedtimeSpreadMin !== null && sleep?.rhythm?.nights >= 5) {
+    footerBits.push(
+      `Bedtime within ${plural(sleep.rhythm.bedtimeSpreadMin, 'minute')} across ${plural(
+        sleep.rhythm.nights,
+        'night'
+      )}.`
+    );
+  }
 
   const html = `
   <div style="background:#14101f;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
@@ -201,6 +270,7 @@ const buildDigestForUser = async (user) => {
           : ''
       }
 
+      ${sleepHtml}
       ${signalHtml}
 
       <div style="margin:28px 0 0;padding:18px 20px;background:rgba(212,175,122,0.07);border-left:2px solid #d4af7a;border-radius:0 12px 12px 0;">
@@ -210,6 +280,7 @@ const buildDigestForUser = async (user) => {
 
       ${plannedHtml}
       ${taskHtml}
+      ${staleHtml}
       ${habitHtml}
 
       ${
@@ -233,6 +304,8 @@ const buildDigestForUser = async (user) => {
   const subject =
     state === 'drifting' || state === 'slipping'
       ? `${STATE_WORD[state]} — one thing today`
+      : stuck
+      ? `${stuck.task.title} — ${plural(stuck.stale.offeredDays, 'morning')} now`
       : planned.length > 0
       ? `Today: ${planned[0].title} at ${timeIn(planned[0].scheduledAt)}`
       : drift?.headline
