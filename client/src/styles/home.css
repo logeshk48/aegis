@@ -20,6 +20,18 @@
 
   .bento-stats { grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
 
+  /* Two up on a phone, three from tablet. Three 110px tiles cannot hold
+     a serif "7h 55m" without wrapping it onto two lines. */
+  .stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 520px) {
+    .stat-tiles { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  }
+
   @media (min-width: 768px) {
     .bento-main { grid-template-columns: repeat(5, 1fr); }
     .span-3 { grid-column: span 3; }
@@ -31,15 +43,18 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem 0.9rem;
+    min-height: var(--tap);
+    padding: 0.7rem 0.9rem;
     border-radius: 0.85rem;
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid transparent;
     transition: all 0.4s var(--ease);
   }
-  .lux-row:hover {
-    background: rgba(0, 0, 0, 0.32);
-    border-color: var(--border-subtle);
+  @media (hover: hover) and (pointer: fine) {
+    .lux-row:hover {
+      background: rgba(0, 0, 0, 0.32);
+      border-color: var(--border-subtle);
+    }
   }
 
   .lux-row-alert {
@@ -78,17 +93,23 @@
 
   /* tiny action button — sized to be tapped, not just clicked */
   .btn-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 0.72rem;
     font-weight: 600;
     padding: 0.5rem 0.9rem;
-    min-height: 2.2rem;
+    min-height: 2.3rem;
+    min-width: 3.2rem;
     border-radius: 0.6rem;
     background: var(--gradient-gold);
     color: #14101f;
     transition: all 0.3s var(--ease);
   }
-  .btn-mini:hover { transform: translateY(-1px); }
-  .btn-mini:active { transform: translateY(0) scale(0.97); }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-mini:hover { transform: translateY(-1px); }
+  }
+  .btn-mini:active { transform: scale(0.95); }
   .btn-mini:disabled {
     background: rgba(255, 255, 255, 0.06);
     color: var(--text-faint);
@@ -98,8 +119,8 @@
 
   /* custom checkbox */
   .lux-check {
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 1.25rem;
+    height: 1.25rem;
     border-radius: 0.35rem;
     accent-color: var(--gold);
     cursor: pointer;
@@ -262,7 +283,7 @@
 
   .drift-headline {
     font-family: 'Fraunces', serif;
-    font-size: 1.5rem;
+    font-size: clamp(1.25rem, 4vw, 1.5rem);
     font-weight: 600;
     line-height: 1.25;
     color: var(--text-display);
@@ -326,7 +347,9 @@
     border: 1px solid transparent;
     transition: all 0.4s var(--ease);
   }
-  .plan-step:hover { border-color: var(--border-subtle); }
+  @media (hover: hover) and (pointer: fine) {
+    .plan-step:hover { border-color: var(--border-subtle); }
+  }
 
   .plan-num {
     font-family: 'Fraunces', serif;
@@ -376,7 +399,9 @@
     transition: opacity 0.3s var(--ease), stroke-width 0.3s var(--ease);
     cursor: pointer;
   }
-  .ring-seg:hover { opacity: 1 !important; stroke-width: 16 !important; }
+  @media (hover: hover) and (pointer: fine) {
+    .ring-seg:hover { opacity: 1 !important; stroke-width: 16 !important; }
+  }
 
   .ring-core {
     position: absolute;
@@ -493,11 +518,18 @@
     border: 1px solid var(--border-subtle);
     transition: all 0.45s var(--ease);
   }
-  .more-card:hover {
-    border-color: var(--border-hover);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lift);
+  @media (hover: hover) and (pointer: fine) {
+    .more-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lift);
+    }
+    .more-card:hover .more-arrow {
+      color: var(--gold);
+      transform: translateX(3px);
+    }
   }
+  .more-card:active { border-color: var(--border-hover); transform: scale(0.99); }
 
   .more-card-wide {
     background:
@@ -529,7 +561,7 @@
 
   .more-quote {
     font-family: 'Fraunces', serif;
-    font-size: 1.15rem;
+    font-size: clamp(1.05rem, 3.5vw, 1.15rem);
     font-weight: 500;
     line-height: 1.45;
     color: var(--text-display);
@@ -560,18 +592,12 @@
     font-size: 0.9rem;
     transition: all 0.4s var(--ease);
   }
-  .more-card:hover .more-arrow {
-    color: var(--gold);
-    transform: translateX(3px);
-  }
 
   @media (max-width: 767px) {
     .page-shell { padding-bottom: 8rem; }
-    .bento-stats .surface-tile { padding: 0.9rem 0.5rem; }
-    .numeral { font-size: 1.5rem; }
     .signal-label { width: 6.5rem; font-size: 0.72rem; }
     .drift-panel { padding: 1.35rem; }
-    .drift-headline { font-size: 1.25rem; }
-    .more-quote { font-size: 1.05rem; }
+    .timeline-panel { padding: 1.35rem; }
+    .more-card { padding: 1.2rem 1.25rem; }
   }
 }

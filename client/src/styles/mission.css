@@ -11,32 +11,35 @@
   }
   .chip-row .mission-reason { margin-top: 0; }
 
-  /* the tappable "what kind is this" chip */
+  /* The tappable "what kind is this" chip. It stays visually small, but
+     the hit area is padded out to a thumb — a 20px target that changes
+     how the whole mission behaves is a target you miss. */
   .kind-chip {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
+    min-height: 2rem;
     font-size: 0.62rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    padding: 0.2rem 0.55rem;
+    padding: 0.35rem 0.7rem;
     border-radius: 999px;
     color: var(--text-muted);
     border: 1px dashed var(--border-hover);
     transition: all 0.3s var(--ease);
   }
-  .kind-chip:hover {
-    color: var(--gold);
-    border-color: var(--gold);
+  @media (hover: hover) and (pointer: fine) {
+    .kind-chip:hover { color: var(--gold); border-color: var(--gold); }
   }
+  .kind-chip:active { color: var(--gold); border-color: var(--gold); }
 
   .kind-menu {
     flex-basis: 100%;
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
-    margin-top: 0.3rem;
+    margin-top: 0.4rem;
     animation: fadeIn 0.25s ease both;
   }
 
@@ -44,15 +47,19 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    font-size: 0.72rem;
-    padding: 0.4rem 0.7rem;
+    min-height: var(--tap);
+    font-size: 0.78rem;
+    padding: 0.55rem 0.9rem;
     border-radius: 999px;
     color: var(--text-muted);
     border: 1px solid var(--border-subtle);
     background: rgba(0, 0, 0, 0.25);
     transition: all 0.3s var(--ease);
   }
-  .kind-opt:hover { color: var(--text-display); }
+  @media (hover: hover) and (pointer: fine) {
+    .kind-opt:hover { color: var(--text-display); }
+  }
+  .kind-opt:active { transform: scale(0.97); }
 
   .kind-opt-on {
     color: var(--gold);
@@ -82,7 +89,7 @@
 
   .plan-question {
     font-family: 'Fraunces', serif;
-    font-size: 1.05rem;
+    font-size: clamp(0.98rem, 3vw, 1.05rem);
     font-weight: 600;
     color: var(--text-display);
     margin-top: 1.35rem;
@@ -100,8 +107,10 @@
     display: inline-flex;
     flex-direction: column;
     align-items: flex-start;
+    justify-content: center;
     gap: 0.1rem;
-    padding: 0.55rem 0.85rem;
+    min-height: var(--tap);
+    padding: 0.5rem 0.9rem;
     border-radius: 0.85rem;
     font-size: 0.8rem;
     font-weight: 500;
@@ -111,13 +120,17 @@
     border: 1px solid var(--border-subtle);
     transition: all 0.3s var(--ease);
   }
-  .slot-chip:hover {
-    border-color: var(--gold);
-    background: rgba(212, 175, 122, 0.06);
+  @media (hover: hover) and (pointer: fine) {
+    .slot-chip:hover {
+      border-color: var(--gold);
+      background: rgba(212, 175, 122, 0.06);
+    }
   }
+  .slot-chip:active { transform: scale(0.97); border-color: var(--gold); }
   .slot-chip:disabled {
     opacity: 0.45;
     cursor: default;
+    transform: none;
   }
 
   .slot-time {
@@ -148,10 +161,12 @@
 
   .slot-input {
     flex: 1;
-    min-width: 210px;
+    min-width: 0;
+    min-height: var(--tap);
     padding: 0.65rem 0.85rem;
     border-radius: 0.85rem;
-    font-size: 0.85rem;
+    /* 16px so iOS does not zoom when the picker opens */
+    font-size: 1rem;
     color: var(--text-display);
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-subtle);
@@ -160,6 +175,10 @@
   .slot-input:focus {
     outline: none;
     border-color: var(--gold);
+  }
+
+  @media (min-width: 640px) {
+    .slot-input { font-size: 0.85rem; min-width: 210px; }
   }
 
   /* errand prep step */
@@ -200,13 +219,17 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem 0.9rem;
+    min-height: var(--tap);
+    padding: 0.7rem 0.9rem;
     border-radius: 0.85rem;
     background: rgba(0, 0, 0, 0.22);
     cursor: pointer;
     transition: background 0.3s var(--ease);
   }
-  .quick-row:hover { background: rgba(0, 0, 0, 0.35); }
+  @media (hover: hover) and (pointer: fine) {
+    .quick-row:hover { background: rgba(0, 0, 0, 0.35); }
+  }
+  .quick-row:active { background: rgba(212, 175, 122, 0.08); }
 
   .quick-title {
     font-size: 0.88rem;
@@ -258,7 +281,7 @@
     display: flex;
     align-items: center;
     gap: 0.65rem;
-    padding: 0.45rem 0;
+    padding: 0.3rem 0;
   }
 
   .planned-dot {
@@ -286,16 +309,23 @@
     white-space: nowrap;
   }
 
+  /* was ~20px tall — the smallest target on the page, next to a title
+     that fills the rest of the row */
   .planned-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    min-width: 2.4rem;
+    min-height: 2.4rem;
     font-size: 0.7rem;
     color: var(--text-faint);
-    padding: 0.2rem 0.4rem;
-    border-radius: 0.4rem;
+    border-radius: 0.5rem;
     transition: color 0.3s var(--ease);
   }
-  .planned-btn:hover { color: var(--gold); }
+  @media (hover: hover) and (pointer: fine) {
+    .planned-btn:hover { color: var(--gold); }
+  }
+  .planned-btn:active { color: var(--gold); background: rgba(212, 175, 122, 0.08); }
 
   @media (max-width: 640px) {
     .plan-icon {
@@ -307,9 +337,11 @@
       flex-direction: column;
       align-items: flex-start;
     }
+    /* two per row rather than a ragged wrap */
     .slot-chip { flex: 1 1 calc(50% - 0.45rem); }
   }
-    /* ---- stale task note ---- */
+
+  /* ---- stale task note ---- */
   /* Quiet at "noticed", warmer at "stuck". It should read as an observation,
      never a telling-off — the whole point is that you are still here. */
   .stale-note {
@@ -344,12 +376,18 @@
   .stale-drop {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.35rem;
-    margin-top: 0.7rem;
+    min-height: 2.4rem;
+    padding: 0.4rem 0.6rem 0.4rem 0;
+    margin-top: 0.4rem;
     font-size: 0.72rem;
     letter-spacing: 0.06em;
     color: var(--text-faint);
     transition: color 0.3s var(--ease);
   }
-  .stale-drop:hover { color: var(--rose); }
+  @media (hover: hover) and (pointer: fine) {
+    .stale-drop:hover { color: var(--rose); }
+  }
+  .stale-drop:active { color: var(--rose); }
 }

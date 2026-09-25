@@ -23,6 +23,9 @@
   --gradient-gold: linear-gradient(135deg, #d4af7a 0%, #e8c99b 50%, #c9a068 100%);
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Smallest comfortable tap. Everything interactive meets this on touch. */
+  --tap: 44px;
 }
 
 body {
@@ -30,13 +33,15 @@ body {
   color: var(--text-body);
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* stops the grey flash on tap in mobile Safari and Chrome */
+  -webkit-tap-highlight-color: transparent;
 }
 
 @layer components {
   /* ---------- TYPOGRAPHY ---------- */
   .display-lg {
     font-family: 'Fraunces', serif;
-    font-size: clamp(1.9rem, 5vw, 2.6rem);
+    font-size: clamp(1.75rem, 5vw, 2.6rem);
     font-weight: 600;
     line-height: 1.1;
     letter-spacing: -0.02em;
@@ -45,7 +50,7 @@ body {
 
   .display-md {
     font-family: 'Fraunces', serif;
-    font-size: 1.5rem;
+    font-size: clamp(1.25rem, 3.5vw, 1.5rem);
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--text-display);
@@ -64,7 +69,7 @@ body {
 
   .numeral {
     font-family: 'Fraunces', serif;
-    font-size: 2rem;
+    font-size: clamp(1.5rem, 4.5vw, 2rem);
     font-weight: 600;
     line-height: 1;
     color: var(--gold);
@@ -86,10 +91,15 @@ body {
     padding: 1.4rem;
     transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease), border-color 0.5s var(--ease);
   }
-  .surface-tile:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-lift);
-    border-color: var(--border-hover);
+
+  /* A phone has no hover. Without this guard the lift sticks after a tap
+     and the card stays raised until you touch somewhere else. */
+  @media (hover: hover) and (pointer: fine) {
+    .surface-tile:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lift);
+      border-color: var(--border-hover);
+    }
   }
 
   .surface-tile-accent { position: relative; overflow: hidden; }
@@ -104,6 +114,11 @@ body {
 
   /* ---------- BUTTONS ---------- */
   .btn-gold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: var(--tap);
     background: var(--gradient-gold);
     color: #14101f;
     font-weight: 600;
@@ -113,14 +128,22 @@ body {
     box-shadow: 0 4px 16px rgba(212, 175, 122, 0.2);
     transition: all 0.4s var(--ease);
   }
-  .btn-gold:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(212, 175, 122, 0.35);
+  @media (hover: hover) and (pointer: fine) {
+    .btn-gold:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(212, 175, 122, 0.35);
+    }
   }
-  .btn-gold:active { transform: translateY(0); }
+  /* On touch this IS the feedback, so it has to be felt rather than seen */
+  .btn-gold:active { transform: scale(0.97); box-shadow: 0 2px 10px rgba(212, 175, 122, 0.25); }
   .btn-gold:disabled { opacity: 0.45; transform: none; cursor: default; }
 
   .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: var(--tap);
     background: transparent;
     border: 1px solid var(--border-subtle);
     color: var(--text-body);
@@ -130,21 +153,42 @@ body {
     padding: 0.7rem 1.4rem;
     transition: all 0.4s var(--ease);
   }
-  .btn-outline:hover {
-    border-color: var(--gold);
-    color: var(--gold);
-    background: rgba(212, 175, 122, 0.06);
+  @media (hover: hover) and (pointer: fine) {
+    .btn-outline:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(212, 175, 122, 0.06);
+    }
   }
+  .btn-outline:active { transform: scale(0.97); border-color: var(--gold); color: var(--gold); }
+
+  /* text-only actions still need a thumb-sized box around them */
+  .btn-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: var(--tap);
+    padding: 0.5rem 0.4rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    transition: color 0.3s var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-text:hover { color: var(--gold); }
+  }
+  .btn-text:active { color: var(--gold); }
 
   /* ---------- INPUTS ---------- */
   .input-lux {
     width: 100%;
+    min-height: var(--tap);
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid var(--border-subtle);
     border-radius: 0.85rem;
     padding: 0.8rem 1rem;
     color: var(--text-display);
-    font-size: 0.9rem;
+    /* 16px stops iOS zooming the page when the field is focused */
+    font-size: 1rem;
     transition: all 0.4s var(--ease);
   }
   .input-lux::placeholder { color: var(--text-faint); }
@@ -153,6 +197,10 @@ body {
     border-color: var(--gold);
     background: rgba(0, 0, 0, 0.35);
     box-shadow: 0 0 0 3px rgba(212, 175, 122, 0.1);
+  }
+
+  @media (min-width: 640px) {
+    .input-lux { font-size: 0.9rem; }
   }
 
   /* ---------- ANIMATIONS ---------- */
@@ -177,5 +225,32 @@ body {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: shimmer 4s linear infinite;
+  }
+
+  /* tighter padding where the screen is narrow — 1.4rem each side eats
+     a quarter of a 390px viewport before any content gets a look in */
+  @media (max-width: 640px) {
+    .surface-tile { padding: 1.05rem; border-radius: 1.1rem; }
+  }
+}
+
+/* The shimmer runs forever, which is exactly the kind of thing this
+   setting exists for. Killing the animation alone would leave the text
+   transparent, so the fill has to come back with it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .text-shimmer {
+    animation: none;
+    background: none;
+    -webkit-text-fill-color: var(--gold);
+    color: var(--gold);
   }
 }

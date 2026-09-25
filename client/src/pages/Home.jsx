@@ -421,7 +421,7 @@ function Home() {
           </p>
         </div>
 
-        <div className="span-3 grid grid-cols-3 gap-4">
+        <div className="span-3 stat-tiles">
           <div className="surface-tile text-center flex flex-col justify-center">
             <div className="numeral">{pendingTasks.length}</div>
             <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Remaining</div>
@@ -431,7 +431,7 @@ function Home() {
             <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Best streak</div>
           </div>
           <div className="surface-tile text-center flex flex-col justify-center">
-            <div className="numeral" style={{ fontSize: sleptMinutes ? '1.5rem' : undefined }}>
+            <div className="numeral" style={{ fontSize: sleptMinutes ? '1.35rem' : undefined }}>
               {sleptMinutes ? shortDuration(sleptMinutes) : '—'}
             </div>
             <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Last night</div>
