@@ -1,11 +1,21 @@
 /* ===== HOME ===== */
 
 @layer components {
+  /* Clears the floating nav. Without this the last ~90px of every page
+     sits behind the pill — apply to the root of Tasks, Habits and Diary too. */
+  .page-shell {
+    padding-bottom: 7.5rem;
+  }
+
   .bento {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
     gap: 1rem;
     margin-bottom: 1rem;
+    /* Tiles size to their content. Stretching made "Nothing scheduled
+       for today" inherit the height of a five-habit Rituals list, so the
+       emptiest thing on the page became the largest. */
+    align-items: start;
   }
 
   .bento-stats { grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
@@ -39,9 +49,9 @@
 
   .lux-row-done { background: rgba(212, 175, 122, 0.08); }
 
+  /* Empty states are a sentence, not a room. */
   .lux-empty {
-    text-align: center;
-    padding: 2rem 0;
+    padding: 0.4rem 0 0.2rem;
     font-size: 0.82rem;
     color: var(--text-faint);
     font-style: italic;
@@ -66,17 +76,19 @@
   }
   .chip-pop { animation: chipPop 0.45s var(--ease); }
 
-  /* tiny action button */
+  /* tiny action button — sized to be tapped, not just clicked */
   .btn-mini {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    padding: 0.35rem 0.8rem;
+    padding: 0.5rem 0.9rem;
+    min-height: 2.2rem;
     border-radius: 0.6rem;
     background: var(--gradient-gold);
     color: #14101f;
     transition: all 0.3s var(--ease);
   }
   .btn-mini:hover { transform: translateY(-1px); }
+  .btn-mini:active { transform: translateY(0) scale(0.97); }
   .btn-mini:disabled {
     background: rgba(255, 255, 255, 0.06);
     color: var(--text-faint);
@@ -86,8 +98,8 @@
 
   /* custom checkbox */
   .lux-check {
-    width: 1.05rem;
-    height: 1.05rem;
+    width: 1.15rem;
+    height: 1.15rem;
     border-radius: 0.35rem;
     accent-color: var(--gold);
     cursor: pointer;
@@ -554,6 +566,7 @@
   }
 
   @media (max-width: 767px) {
+    .page-shell { padding-bottom: 8rem; }
     .bento-stats .surface-tile { padding: 0.9rem 0.5rem; }
     .numeral { font-size: 1.5rem; }
     .signal-label { width: 6.5rem; font-size: 0.72rem; }

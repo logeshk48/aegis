@@ -297,7 +297,7 @@ function Home() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto relative z-10">
+    <div className="max-w-4xl mx-auto relative z-10 page-shell">
       {/* Header */}
       <div className="animate-rise mb-6">
         <p className="eyebrow mb-2">{dateLine}</p>
