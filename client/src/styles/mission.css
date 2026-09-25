@@ -309,4 +309,47 @@
     }
     .slot-chip { flex: 1 1 calc(50% - 0.45rem); }
   }
+    /* ---- stale task note ---- */
+  /* Quiet at "noticed", warmer at "stuck". It should read as an observation,
+     never a telling-off — the whole point is that you are still here. */
+  .stale-note {
+    margin-bottom: 1.1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 0.8rem;
+    border-left: 2px solid var(--text-faint);
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .stale-stuck {
+    border-left-color: var(--rose);
+    background: rgba(201, 139, 139, 0.06);
+  }
+
+  .stale-line {
+    font-size: 0.82rem;
+    color: var(--text-body);
+    line-height: 1.5;
+  }
+
+  .stale-ask {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--text-display);
+    margin-top: 0.35rem;
+    line-height: 1.4;
+  }
+  .stale-stuck .stale-ask { color: var(--rose); }
+
+  .stale-drop {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.7rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    transition: color 0.3s var(--ease);
+  }
+  .stale-drop:hover { color: var(--rose); }
 }

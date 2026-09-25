@@ -6,6 +6,7 @@ import {
 import {
   getMission, startFocus, endFocus, scheduleTask, setTaskKind, completeTask,
 } from '../services/focusApi';
+import api from '../api/axios';
 import '../styles/focus.css';
 import '../styles/mission.css';
 
@@ -77,6 +78,25 @@ const buildSlots = () => {
 };
 
 // ---------- small pieces ----------
+
+// Shown only once a task has survived three separate days at the top.
+// The point is to stop pretending day four is day one.
+function StaleNote({ stale, title, busy, onDrop }) {
+  if (!stale) return null;
+
+  return (
+    <div className={`stale-note ${stale.level === 'stuck' ? 'stale-stuck' : ''}`}>
+      <p className="stale-line">{stale.line}</p>
+      <p className="stale-ask">{stale.ask}</p>
+
+      {stale.canDrop && (
+        <button onClick={onDrop} className="stale-drop" disabled={busy}>
+          <X size={12} /> Drop it
+        </button>
+      )}
+    </div>
+  );
+}
 
 // "Errand ▾" — tap to correct what kind of task this is
 function KindChips({ task, onKind, busy }) {
@@ -511,6 +531,14 @@ function MissionCard({ onStart, onResume, onTasksChanged }) {
 
   const handleUnplan = (task) => act(() => scheduleTask(task.id, null));
 
+  // Deciding not to do something is a decision, and the message says so.
+  // A drop that reads as failure is a drop nobody takes.
+  const handleDrop = (taskId, title) =>
+    act(
+      () => api.delete(`/tasks/${taskId}`),
+      `Dropped: ${title}. Choosing not to do it is a decision, not a failure.`
+    );
+
   const handleQuickComplete = async (task) => {
     try {
       await completeTask(task.id);
@@ -610,6 +638,9 @@ function MissionCard({ onStart, onResume, onTasksChanged }) {
   const { primary } = mission;
   const primaryIsDesk = !primary || primary.type === 'focus';
 
+  // whichever task the staleness is about — quick missions carry a list
+  const staleTitle = primary?.task?.title || primary?.tasks?.[0]?.title || 'this';
+
   return (
     <div className="mission-card animate-rise">
       <div className="mission-top">
@@ -618,6 +649,15 @@ function MissionCard({ onStart, onResume, onTasksChanged }) {
           <span className="mission-today">{mission.minutesToday} min focused today</span>
         )}
       </div>
+
+      {/* Sits above the mission because it reframes what follows —
+          this is day four of the same ask, not a fresh one. */}
+      <StaleNote
+        stale={primary?.stale}
+        title={staleTitle}
+        busy={busy}
+        onDrop={() => handleDrop(primary.staleTaskId, staleTitle)}
+      />
 
       {/* the primary mission — its shape follows the kind of task */}
       {primaryIsDesk && (
