@@ -16,7 +16,7 @@ const hhmm = (d) => {
 const duration = (min) => `${Math.floor(min / 60)}h ${pad(min % 60)}m`;
 
 // Night runs from 20:00 to 04:00; morning from 04:00 to 12:00. Outside
-// those the card has nothing to ask, so it just reports.
+// those the card has nothing to ask, so it gets out of the way.
 const phaseNow = (h = new Date().getHours()) => {
   if (h >= 20 || h < 4) return 'night';
   if (h < 12) return 'morning';
@@ -33,7 +33,7 @@ const isoFor = (date, time) => {
   return d.toISOString();
 };
 
-function SleepCard({ onChanged }) {
+function SleepCard({ onChanged, onState }) {
   const [state, setState] = useState(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -45,13 +45,14 @@ function SleepCard({ onChanged }) {
     try {
       const data = await getSleep();
       setState(data);
+      onState?.(data);
       if (data.lastNight?.sleepAt) setBedTime(hhmm(data.lastNight.sleepAt));
       if (data.lastNight?.wakeAt) setWakeTime(hhmm(data.lastNight.wakeAt));
     } catch (err) {
       console.error('Could not read sleep:', err);
       setState({ failed: true });
     }
-  }, []);
+  }, [onState]);
 
   useEffect(() => {
     load();
@@ -84,10 +85,10 @@ function SleepCard({ onChanged }) {
 
   if (!state || state.failed) return null;
 
-  const { lastNight, pendingWake, needsConfirm, rhythm, capacity } = state;
+  const { lastNight, pendingWake, needsConfirm } = state;
   const phase = phaseNow();
 
-  // ---- the correction form, reachable from any state ----
+  // ---- the correction form, reachable from the tile below too ----
   if (editing) {
     return (
       <div className="sleep-card animate-rise">
@@ -194,39 +195,9 @@ function SleepCard({ onChanged }) {
     );
   }
 
-  // ---- daytime: what last night bought you ----
-  const spread = rhythm.bedtimeSpreadMin;
-
-  return (
-    <div className="sleep-card animate-rise">
-      <div className="flex items-baseline justify-between">
-        <p className="eyebrow">Sleep</p>
-        <button onClick={() => setEditing(true)} className="sleep-edit">edit</button>
-      </div>
-
-      {lastNight?.confirmed && lastNight.minutes ? (
-        <>
-          <h2 className="display-md mt-1">{duration(lastNight.minutes)}</h2>
-          <p className="body-sm mt-1" style={{ color: 'var(--text-body)' }}>{capacity.reason}</p>
-        </>
-      ) : (
-        <>
-          <h2 className="display-md mt-1">Nothing logged</h2>
-          <p className="body-sm mt-1">Tap "Turning in" tonight and this starts meaning something.</p>
-        </>
-      )}
-
-      {rhythm.nights >= 2 && (
-        <div className="sleep-rhythm">
-          <span className="numeral-sm">{spread === null ? '—' : `±${spread}m`}</span>
-          <span className="xs-label">
-            bedtime spread over {rhythm.nights} night{rhythm.nights === 1 ? '' : 's'}
-            {spread !== null && spread < 45 ? ' — steady' : spread !== null ? ' — uneven' : ''}
-          </span>
-        </div>
-      )}
-    </div>
-  );
+  // Daytime with nothing outstanding. A card that only reports is a card
+  // in the way — the number lives in the stats tile instead.
+  return null;
 }
 
 export default SleepCard;

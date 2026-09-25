@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import AskAegis from '../components/AskAegis';
 import Suggestions from '../components/Suggestions';
@@ -34,6 +34,9 @@ const byTime = (a, b) => {
   return new Date(b.createdAt) - new Date(a.createdAt);
 };
 
+const pad = (n) => String(n).padStart(2, '0');
+const shortDuration = (min) => `${Math.floor(min / 60)}h ${pad(min % 60)}m`;
+
 function Home() {
   const userName = localStorage.getItem('userName') || 'there';
   const [tasks, setTasks] = useState([]);
@@ -44,6 +47,10 @@ function Home() {
   // focus missions
   const [focusSession, setFocusSession] = useState(null);
   const [missionKey, setMissionKey] = useState(0);
+
+  // reported up by SleepCard so the stats row can show last night
+  // without a second request
+  const [sleep, setSleep] = useState(null);
 
   // evening check-in — only looked up after dark
   const [wroteToday, setWroteToday] = useState(null); // null = not checked yet
@@ -92,6 +99,9 @@ function Home() {
     localStorage.setItem('aegis:eveningDismissed', todayStr());
     setEveningDismissed(true);
   };
+
+  // stable so SleepCard's load effect doesn't re-run every render
+  const handleSleepState = useCallback((data) => setSleep(data), []);
 
   // re-read tasks after the mission card changes something
   const reloadTasks = async () => {
@@ -226,6 +236,9 @@ function Home() {
       ? Math.round((tasks.filter((t) => t.completed).length / tasks.length) * 100)
       : 0;
 
+  const sleptMinutes =
+    sleep?.lastNight?.confirmed && sleep.lastNight.minutes ? sleep.lastNight.minutes : null;
+
   const greeting = (() => {
     const h = new Date().getHours();
     if (h < 12) return 'Good morning';
@@ -304,10 +317,12 @@ function Home() {
         </p>
       </div>
 
-      {/* Sleep — the upstream signal. Asks at night, confirms in the morning. */}
-      <SleepCard onChanged={reloadAll} />
+      {/* ---- things that want something from you ---- */}
+      {/* Both of these render nothing unless they have a question,
+          so at 3pm you go straight from the greeting to your day. */}
 
-      {/* Evening check-in — the one thing that feeds tasks, memory and drift at once */}
+      <SleepCard onChanged={reloadAll} onState={handleSleepState} />
+
       {isEvening() && !eveningDismissed && wroteToday === false && (
         <EveningCheckIn
           stats={{
@@ -322,7 +337,6 @@ function Home() {
         />
       )}
 
-      {/* Today's mission */}
       <MissionCard
         key={missionKey}
         onStart={(s) => setFocusSession(s)}
@@ -330,37 +344,8 @@ function Home() {
         onTasksChanged={reloadTasks}
       />
 
-      {/* Drift diagnosis */}
-      <DriftPanel onStartRecovery={handleStartRecovery} />
-
-      {/* Suggestions */}
-      <div className="animate-rise delay-1">
-        <Suggestions onAccept={handleAcceptSuggestion} />
-      </div>
-
-      {/* Progress ring + supporting stats */}
-      <div className="bento bento-main animate-rise delay-2">
-        <div className="surface-tile surface-tile-accent span-2 flex flex-col items-center justify-center">
-          <ProgressRing completed={completedToday} total={completedToday + pendingTasks.length} />
-          <p className="eyebrow mt-3" style={{ color: 'var(--text-muted)' }}>
-            Today's progress
-          </p>
-        </div>
-
-        <div className="span-3 grid grid-cols-2 gap-4">
-          <div className="surface-tile text-center flex flex-col justify-center">
-            <div className="numeral">{pendingTasks.length}</div>
-            <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Remaining</div>
-          </div>
-          <div className="surface-tile text-center flex flex-col justify-center">
-            <div className="numeral">{bestStreak}</div>
-            <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Best streak</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main bento */}
-      <div className="bento bento-main animate-rise delay-3">
+      {/* ---- your actual day ---- */}
+      <div className="bento bento-main animate-rise delay-1">
         {/* Today */}
         <div className="surface-tile span-3">
           <div className="flex items-baseline justify-between mb-4">
@@ -427,12 +412,45 @@ function Home() {
         </div>
       </div>
 
-      {/* Life timeline */}
+      {/* Progress ring + supporting numbers, sleep among them */}
+      <div className="bento bento-main animate-rise delay-2">
+        <div className="surface-tile surface-tile-accent span-2 flex flex-col items-center justify-center">
+          <ProgressRing completed={completedToday} total={completedToday + pendingTasks.length} />
+          <p className="eyebrow mt-3" style={{ color: 'var(--text-muted)' }}>
+            Today's progress
+          </p>
+        </div>
+
+        <div className="span-3 grid grid-cols-3 gap-4">
+          <div className="surface-tile text-center flex flex-col justify-center">
+            <div className="numeral">{pendingTasks.length}</div>
+            <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Remaining</div>
+          </div>
+          <div className="surface-tile text-center flex flex-col justify-center">
+            <div className="numeral">{bestStreak}</div>
+            <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Best streak</div>
+          </div>
+          <div className="surface-tile text-center flex flex-col justify-center">
+            <div className="numeral" style={{ fontSize: sleptMinutes ? '1.5rem' : undefined }}>
+              {sleptMinutes ? shortDuration(sleptMinutes) : '—'}
+            </div>
+            <div className="eyebrow mt-2" style={{ color: 'var(--text-muted)' }}>Last night</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ---- things to read, not act on ---- */}
+
+      <DriftPanel onStartRecovery={handleStartRecovery} />
+
+      <div className="animate-rise delay-3">
+        <Suggestions onAccept={handleAcceptSuggestion} />
+      </div>
+
       <div className="animate-rise delay-4">
         <LifeTimeline />
       </div>
 
-      {/* Read · Memory · Stats */}
       <MoreCards completionRate={overallRate} />
 
       {/* Ask Aegis — tells Home to re-read after the agent changes anything */}
