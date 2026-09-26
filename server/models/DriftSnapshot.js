@@ -15,7 +15,9 @@ const driftSnapshotSchema = new mongoose.Schema(
     },
     state: {
       type: String,
-      enum: ['steady', 'slipping', 'drifting', 'recovering', 'unknown'],
+      // 'paused' is a recorded fact, not an absence: the day was set aside.
+      // Without it here the daily snapshot throws during a disruption.
+      enum: ['steady', 'slipping', 'drifting', 'recovering', 'unknown', 'paused'],
       required: true,
     },
     score: {

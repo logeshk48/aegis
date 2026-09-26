@@ -6,89 +6,92 @@ const FocusSession = require('../models/FocusSession');
 const { askAI, cleanJsonString } = require('./aiService');
 const { buildCompactContext } = require('./contextService');
 const { buildDriftPrompt } = require('./prompts');
+const {
+  disruptedDaySet,
+  activeDisruption,
+  listDisruptions,
+  REASONS,
+  dstr,
+  todayStr,
+} = require('./disruptionService');
 
 const DAY = 86400000;
 const dateStr = (d) => new Date(d).toISOString().split('T')[0];
 const daysAgo = (n) => new Date(Date.now() - n * DAY);
 
 // Focus tuning.
-// REFERENCE is the daily minute count the rate saturates at, so the signal
-// stays a 0..1 rate like the other three. Two hours a day is deliberately
-// high: above it we stop distinguishing, the same way habit consistency and
-// journalling already cap at 1.
 const FOCUS_REFERENCE_MIN = 120;
-
-// Focus sessions are sparse by nature. Without a real baseline habit, one
-// quiet week reads as -100% and would wrongly trip the catastrophic floor,
-// so we refuse to judge focus at all below this much history.
 const MIN_BASELINE_FOCUS_MINUTES = 60;
 
-// ---------- individual signals ----------
+// Judging a week from the two days you happened to be upright is not
+// better than not judging it. Below this, every signal returns null.
+const MIN_USABLE_DAYS = 3;
 
-const taskCompletion = (tasks, from, to) => {
-  const inWindow = tasks.filter((t) => {
-    const created = new Date(t.createdAt);
-    return created >= from && created <= to;
-  });
+/** Local date strings covering a window, inclusive. */
+const daysBetween = (from, to) => {
+  const out = [];
+  let cur = new Date(from).getTime();
+  const end = new Date(to).getTime();
+  while (cur <= end) {
+    out.push(dstr(new Date(cur)));
+    cur += DAY;
+  }
+  return out;
+};
+
+// ---------- individual signals ----------
+// Each takes the list of days that actually count. Disrupted days are not
+// in that list, so they are never scored as zero — they are not scored.
+
+const taskCompletion = (tasks, days) => {
+  const set = new Set(days);
+  const inWindow = tasks.filter((t) => set.has(dstr(t.createdAt)));
   if (inWindow.length === 0) return null;
+
   const done = inWindow.filter((t) => t.completed).length;
   return done / inWindow.length;
 };
 
-const habitConsistency = (habits, from, to) => {
-  if (habits.length === 0) return null;
+const habitConsistency = (habits, days) => {
+  if (habits.length === 0 || days.length === 0) return null;
 
-  const days = Math.max(1, Math.round((to - from) / DAY));
   let expected = 0;
   let actual = 0;
 
   for (const h of habits) {
-    const created = new Date(h.createdAt);
-    const activeDays = Math.max(
-      0,
-      Math.min(days, Math.round((to - Math.max(from, created)) / DAY))
-    );
-    if (activeDays === 0) continue;
+    const born = dstr(h.createdAt);
+    const done = new Set(h.completedDates || []);
 
-    expected += activeDays;
-    actual += (h.completedDates || []).filter((d) => {
-      const dd = new Date(d);
-      return dd >= from && dd <= to;
-    }).length;
+    for (const d of days) {
+      // a three-day-old habit is judged over three days, not thirty
+      if (d < born) continue;
+      expected++;
+      if (done.has(d)) actual++;
+    }
   }
 
   if (expected === 0) return null;
   return Math.min(1, actual / expected);
 };
 
-const diaryEngagement = (entries, from, to) => {
-  const days = Math.max(1, Math.round((to - from) / DAY));
-  const written = new Set(
-    entries
-      .filter((e) => {
-        const d = new Date(e.entryDate);
-        return d >= from && d <= to;
-      })
-      .map((e) => e.entryDate)
-  );
-  return Math.min(1, written.size / days);
+const diaryEngagement = (entries, days) => {
+  if (days.length === 0) return null;
+
+  const set = new Set(days);
+  const written = new Set(entries.map((e) => e.entryDate).filter((d) => set.has(d)));
+  return Math.min(1, written.size / days.length);
 };
 
-/**
- * Total focus minutes started inside a window.
- * Attributed by startedAt, matching how getMission counts "today".
- */
-const focusMinutesIn = (sessions, from, to) =>
-  sessions.reduce((sum, s) => {
-    const started = new Date(s.startedAt);
-    if (started < from || started > to) return sum;
-    return sum + (Number(s.actualMinutes) || 0);
+const focusMinutesIn = (sessions, days) => {
+  const set = new Set(days);
+  return sessions.reduce((sum, s) => {
+    const d = dstr(s.startedAt);
+    return set.has(d) ? sum + (Number(s.actualMinutes) || 0) : sum;
   }, 0);
-
-const focusRate = (minutes, from, to) => {
-  const days = Math.max(1, Math.round((to - from) / DAY));
-  return Math.min(1, minutes / days / FOCUS_REFERENCE_MIN);
 };
+
+const focusRate = (minutes, dayCount) =>
+  Math.min(1, minutes / Math.max(1, dayCount) / FOCUS_REFERENCE_MIN);
 
 // ---------- the main calculation ----------
 
@@ -98,20 +101,52 @@ const calculateDrift = async (userId) => {
   const baselineFrom = daysAgo(37);
   const baselineTo = daysAgo(7);
 
-  const [tasks, habits, entries, sessions] = await Promise.all([
+  const [tasks, habits, entries, sessions, skip, active, history] = await Promise.all([
     Task.find({ user: userId }),
     Habit.find({ user: userId }),
     DiaryEntry.find({ user: userId }),
-    // Only sessions the user actually ended. 'expired' is excluded on purpose:
-    // those are orphans closed by expireStale, and their actualMinutes is
-    // capped at plannedMinutes rather than measured, so counting them would
-    // credit time nobody spent.
     FocusSession.find({
       user: userId,
       status: { $in: ['completed', 'abandoned'] },
       startedAt: { $gte: baselineFrom },
     }).select('startedAt actualMinutes'),
+    disruptedDaySet(userId, 60),
+    activeDisruption(userId),
+    listDisruptions(userId, 14),
   ]);
+
+  const overdue = tasks.filter(
+    (t) => !t.completed && t.dueDate && dateStr(t.dueDate) < dateStr(now)
+  ).length;
+
+  // Coming back is the fragile part, so the day after a disruption gets
+  // treated gently whatever the numbers say.
+  const today = todayStr();
+  const justReturned = history.some(
+    (d) => d.to && d.to < today && (Date.now() - new Date(`${d.to}T00:00:00Z`).getTime()) <= 2 * DAY
+  );
+
+  // You are out. There is nothing here to judge, and pretending otherwise
+  // is how an app stops being believed.
+  if (active) {
+    return {
+      state: 'paused',
+      score: 0,
+      signals: [],
+      overdue,
+      hasEnoughData: false,
+      justReturned: false,
+      disruption: {
+        id: active._id.toString(),
+        from: active.from,
+        to: active.to,
+        reason: active.reason,
+        reasonLabel: REASONS[active.reason] || REASONS.other,
+        note: active.note || '',
+      },
+      calculatedAt: now,
+    };
+  }
 
   const accountAge =
     tasks.length + habits.length + entries.length + sessions.length;
@@ -120,13 +155,32 @@ const calculateDrift = async (userId) => {
       state: 'unknown',
       score: 0,
       signals: [],
-      overdue: 0,
+      overdue,
       hasEnoughData: false,
+      justReturned,
+      disruption: null,
     };
   }
 
-  const focusBaselineMins = focusMinutesIn(sessions, baselineFrom, baselineTo);
-  const focusRecentMins = focusMinutesIn(sessions, recentFrom, now);
+  const recentDays = daysBetween(recentFrom, now).filter((d) => !skip.has(d));
+  const baselineDays = daysBetween(baselineFrom, baselineTo).filter((d) => !skip.has(d));
+
+  // Most of the last week was written off. Say so rather than scoring it.
+  if (recentDays.length < MIN_USABLE_DAYS || baselineDays.length < MIN_USABLE_DAYS) {
+    return {
+      state: 'unknown',
+      score: 0,
+      signals: [],
+      overdue,
+      hasEnoughData: false,
+      justReturned,
+      disruption: null,
+      thinWindow: true,
+    };
+  }
+
+  const focusBaselineMins = focusMinutesIn(sessions, baselineDays);
+  const focusRecentMins = focusMinutesIn(sessions, recentDays);
   const focusHasBaseline = focusBaselineMins >= MIN_BASELINE_FOCUS_MINUTES;
 
   const signals = [];
@@ -135,28 +189,26 @@ const calculateDrift = async (userId) => {
     {
       key: 'tasks',
       label: 'Task completion',
-      recent: taskCompletion(tasks, recentFrom, now),
-      baseline: taskCompletion(tasks, baselineFrom, baselineTo),
+      recent: taskCompletion(tasks, recentDays),
+      baseline: taskCompletion(tasks, baselineDays),
     },
     {
       key: 'habits',
       label: 'Habit consistency',
-      recent: habitConsistency(habits, recentFrom, now),
-      baseline: habitConsistency(habits, baselineFrom, baselineTo),
+      recent: habitConsistency(habits, recentDays),
+      baseline: habitConsistency(habits, baselineDays),
     },
     {
       key: 'diary',
       label: 'Journalling',
-      recent: diaryEngagement(entries, recentFrom, now),
-      baseline: diaryEngagement(entries, baselineFrom, baselineTo),
+      recent: diaryEngagement(entries, recentDays),
+      baseline: diaryEngagement(entries, baselineDays),
     },
     {
       key: 'focus',
       label: 'Focus time',
-      recent: focusHasBaseline ? focusRate(focusRecentMins, recentFrom, now) : null,
-      baseline: focusHasBaseline
-        ? focusRate(focusBaselineMins, baselineFrom, baselineTo)
-        : null,
+      recent: focusHasBaseline ? focusRate(focusRecentMins, recentDays.length) : null,
+      baseline: focusHasBaseline ? focusRate(focusBaselineMins, baselineDays.length) : null,
     },
   ];
 
@@ -173,10 +225,6 @@ const calculateDrift = async (userId) => {
       direction: delta < -0.1 ? 'down' : delta > 0.1 ? 'up' : 'steady',
     });
   }
-
-  const overdue = tasks.filter(
-    (t) => !t.completed && t.dueDate && dateStr(t.dueDate) < dateStr(now)
-  ).length;
 
   let score = 0;
   for (const s of signals) {
@@ -195,11 +243,9 @@ const calculateDrift = async (userId) => {
   const upCount = signals.filter((s) => s.direction === 'up').length;
   const catastrophic = signals.some((s) => s.changePct <= -75);
 
-  // Proportions, not counts. A signal can drop out on any given day (no tasks
-  // created, no focus baseline), so a fixed "3 signals down" would quietly
-  // mean something different depending on how many reported. These ratios
-  // reproduce the old three-signal behaviour exactly and keep the same
-  // meaning when a fourth signal joins.
+  // Proportions, not counts. A signal can drop out on any given day, so a
+  // fixed "3 signals down" would quietly mean something different depending
+  // on how many reported.
   const total = signals.length;
   const downRatio = total ? downCount / total : 0;
   const upRatio = total ? upCount / total : 0;
@@ -216,6 +262,9 @@ const calculateDrift = async (userId) => {
     signals,
     overdue,
     hasEnoughData: true,
+    justReturned,
+    disruption: null,
+    usableDays: { recent: recentDays.length, baseline: baselineDays.length },
     calculatedAt: now,
   };
 };
@@ -236,6 +285,16 @@ const FALLBACKS = {
     plan: [{ step: 'Write a diary entry tonight', why: 'It is how Aegis learns you' }],
     tone: 'calm',
   },
+};
+
+const pausedReport = (drift) => {
+  const label = (drift.disruption?.reasonLabel || 'away').toLowerCase();
+  return {
+    headline: 'Paused.',
+    explanation: `You marked this time as ${label}. Nothing is being measured and nothing is expected — these days are set aside, not counted against you.`,
+    plan: [{ step: 'Nothing today', why: 'That is the whole point' }],
+    tone: 'gentle',
+  };
 };
 
 const validatePlan = (plan) => {
@@ -265,6 +324,14 @@ const getDriftReport = async (userId, force = false) => {
   }
 
   const drift = await calculateDrift(userId);
+
+  // No model call while paused. There is nothing to interpret, and
+  // spending a request to say "nothing" is worse than saying it plainly.
+  if (drift.state === 'paused') {
+    const report = { ...drift, ...pausedReport(drift) };
+    driftCache.set(key, { report, expiresAt: Date.now() + CACHE_MS });
+    return report;
+  }
 
   if (!drift.hasEnoughData) {
     const report = { ...drift, ...FALLBACKS.unknown };
@@ -309,7 +376,9 @@ const getDriftReport = async (userId, force = false) => {
  */
 const recordSnapshot = async (userId, report) => {
   try {
-    if (!report.hasEnoughData) return null;
+    // A paused day is still worth recording — the timeline should show a
+    // pause, not a hole that later reads as a collapse.
+    if (!report.hasEnoughData && report.state !== 'paused') return null;
 
     const date = new Date().toISOString().split('T')[0];
 
@@ -341,10 +410,10 @@ const recordSnapshot = async (userId, report) => {
 const getDriftHistory = async (userId, days = 60) => {
   const from = new Date(Date.now() - days * DAY).toISOString().split('T')[0];
 
-  const snapshots = await DriftSnapshot.find({
-    user: userId,
-    date: { $gte: from },
-  }).sort({ date: 1 });
+  const [snapshots, skip] = await Promise.all([
+    DriftSnapshot.find({ user: userId, date: { $gte: from } }).sort({ date: 1 }),
+    disruptedDaySet(userId, days + 5),
+  ]);
 
   const byDate = new Map(snapshots.map((s) => [s.date, s]));
 
@@ -352,6 +421,20 @@ const getDriftHistory = async (userId, days = 60) => {
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(Date.now() - i * DAY).toISOString().split('T')[0];
     const snap = byDate.get(d);
+
+    // A marked day reads as paused even if the snapshot that ran before
+    // you marked it said otherwise — the correction applies backwards.
+    if (skip.has(d)) {
+      timeline.push({
+        date: d,
+        state: 'paused',
+        score: null,
+        headline: snap ? snap.headline : '',
+        hasData: true,
+      });
+      continue;
+    }
+
     timeline.push({
       date: d,
       state: snap ? snap.state : 'unknown',
