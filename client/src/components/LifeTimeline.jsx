@@ -6,6 +6,9 @@ const STATE_COLOR = {
   recovering: '#d4af7a',
   slipping: '#e8c99b',
   drifting: '#c98b8b',
+  // Deliberately cool and quiet — a paused stretch should read as set aside,
+  // not as a warning or as an achievement.
+  paused: '#6b7a8f',
   unknown: 'rgba(255,255,255,0.07)',
 };
 
@@ -14,6 +17,7 @@ const STATE_LABEL = {
   recovering: 'Recovering',
   slipping: 'Slipping',
   drifting: 'Drifting',
+  paused: 'Paused',
   unknown: 'No data',
 };
 
@@ -73,12 +77,23 @@ function LifeTimeline() {
 
   const withData = days.filter((d) => d.hasData).length;
   const steadyDays = days.filter((d) => d.state === 'steady').length;
+  const pausedDays = days.filter((d) => d.state === 'paused').length;
+
+  // Steadiness is measured over the days you were actually here. Counting
+  // the week you were ill in the denominator is the thing this whole
+  // feature exists to stop.
+  const presentDays = days.length - pausedDays;
 
   const prettyDate = (d) =>
     new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   // only show meaningful periods
   const periods = (data.periods || []).filter((p) => p.state !== 'unknown' && p.days >= 1);
+
+  // Paused only earns a legend slot once it exists — no explaining a
+  // colour that isn't on the ring.
+  const legendStates = ['steady', 'recovering', 'slipping', 'drifting'];
+  if (pausedDays > 0) legendStates.push('paused');
 
   return (
     <div className="timeline-panel mb-6 animate-rise">
@@ -98,7 +113,7 @@ function LifeTimeline() {
               key={d.date}
               className="ring-seg"
               d={arc(i)}
-              stroke={STATE_COLOR[d.state]}
+              stroke={STATE_COLOR[d.state] || STATE_COLOR.unknown}
               strokeWidth={hovered === i ? 16 : 11}
               strokeLinecap="round"
               fill="none"
@@ -110,19 +125,23 @@ function LifeTimeline() {
         </svg>
 
         <div className="ring-core">
-          <p className="core-state">{STATE_LABEL[shown.state]}</p>
+          <p className="core-state">{STATE_LABEL[shown.state] || STATE_LABEL.unknown}</p>
           <p className="core-sub">
             {hovered !== null ? prettyDate(shown.date) : 'today'}
           </p>
-          {shown.score !== null && (
-            <p className="core-date">drift {shown.score}</p>
+          {shown.state === 'paused' ? (
+            <p className="core-date" style={{ color: STATE_COLOR.paused }}>
+              set aside
+            </p>
+          ) : (
+            shown.score !== null && <p className="core-date">drift {shown.score}</p>
           )}
         </div>
       </div>
 
       {/* legend */}
       <div className="tl-legend">
-        {['steady', 'recovering', 'slipping', 'drifting'].map((s) => (
+        {legendStates.map((s) => (
           <span key={s} className="tl-key">
             <span className="tl-swatch" style={{ background: STATE_COLOR[s] }}></span>
             {STATE_LABEL[s]}
@@ -156,8 +175,10 @@ function LifeTimeline() {
 
           <p className="body-sm mt-3" style={{ color: 'var(--text-faint)' }}>
             {steadyDays > 0
-              ? `${steadyDays} steady day${steadyDays === 1 ? '' : 's'} in the last 60.`
+              ? `${steadyDays} steady day${steadyDays === 1 ? '' : 's'} out of the ${presentDays} you were here.`
               : 'Keep going — the pattern will emerge.'}
+            {pausedDays > 0 &&
+              ` ${pausedDays} day${pausedDays === 1 ? '' : 's'} set aside.`}
           </p>
         </>
       )}

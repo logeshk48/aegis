@@ -272,6 +272,12 @@
   .state-slipping { --state: #e8c99b; }
   .state-drifting { --state: #c98b8b; }
   .state-unknown { --state: #6b4d8f; }
+  .state-steady { --state: #8fbf9f; }
+  .state-recovering { --state: #d4af7a; }
+  .state-slipping { --state: #e8c99b; }
+  .state-drifting { --state: #c98b8b; }
+  .state-paused { --state: #6b7a8f; }
+  .state-unknown { --state: #6b4d8f; }
 
   .drift-state-label {
     font-size: 0.62rem;
