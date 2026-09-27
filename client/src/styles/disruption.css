@@ -1,0 +1,207 @@
+/* ===== DISRUPTION ===== */
+
+@layer components {
+  .dis-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    padding: 1.4rem 1.5rem;
+    border: 1px solid var(--border-subtle);
+    background: linear-gradient(160deg, var(--bg-raised) 0%, var(--bg-base) 100%);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .dis-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--dis), transparent);
+  }
+
+  /* Same cool grey the timeline uses for paused days. */
+  .dis-panel { --dis: #6b7a8f; }
+  .dis-ask { --dis: var(--gold); }
+
+  .dis-head {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--dis);
+  }
+
+  .dis-eyebrow {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+  }
+
+  .dis-x {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--tap);
+    height: 2rem;
+    margin-right: -0.75rem;
+    color: var(--text-faint);
+    transition: color 0.3s var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .dis-x:hover { color: var(--text-body); }
+  }
+
+  .dis-headline {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.1rem, 3.8vw, 1.3rem);
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text-display);
+    margin-top: 0.6rem;
+  }
+
+  .dis-body {
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: var(--text-body);
+    margin-top: 0.6rem;
+  }
+
+  .dis-note {
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--text-faint);
+    margin-top: 0.6rem;
+    padding-left: 0.7rem;
+    border-left: 2px solid var(--border-subtle);
+  }
+
+  /* ---- reason buttons ---- */
+  .dis-choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.1rem;
+  }
+
+  .dis-choice {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.4rem;
+    padding: 0.5rem 0.95rem;
+    font-size: 0.8rem;
+    border-radius: 0.7rem;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-display);
+    transition: all 0.3s var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .dis-choice:hover {
+      border-color: var(--border-hover);
+      background: rgba(0, 0, 0, 0.35);
+    }
+  }
+  .dis-choice:active { transform: scale(0.97); }
+
+  .dis-choice-on {
+    border-color: rgba(212, 175, 122, 0.45);
+    background: rgba(212, 175, 122, 0.12);
+    color: var(--gold);
+  }
+
+  /* "Something's actually wrong" is not a peer of the other four —
+     it is the one answer that leaves the numbers standing. */
+  .dis-choice-alt {
+    background: transparent;
+    border-style: dashed;
+    color: var(--text-muted);
+    font-size: 0.76rem;
+  }
+
+  .dis-input {
+    width: 100%;
+    margin-top: 0.85rem;
+    padding: 0.7rem 0.85rem;
+    /* 16px stops iOS zooming the page on focus. */
+    font-size: 16px;
+    border-radius: 0.7rem;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-display);
+  }
+  .dis-input::placeholder { color: var(--text-faint); font-size: 0.82rem; }
+  .dis-input:focus { outline: none; border-color: var(--border-hover); }
+
+  /* ---- actions ---- */
+  .dis-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.1rem;
+  }
+
+  .dis-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.5rem;
+    padding: 0.55rem 1.1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 0.7rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-display);
+    transition: all 0.3s var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .dis-btn:hover { border-color: var(--border-hover); }
+  }
+  .dis-btn:active { transform: scale(0.97); }
+  .dis-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+  .dis-btn-primary {
+    background: var(--gradient-gold);
+    border-color: transparent;
+    color: #14101f;
+  }
+
+  .dis-btn-quiet {
+    font-size: 0.76rem;
+    color: var(--text-faint);
+    min-height: 2.5rem;
+    padding: 0 0.3rem;
+    transition: color 0.3s var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .dis-btn-quiet:hover { color: var(--text-body); }
+  }
+
+  .dis-followup-q {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 1.1rem;
+  }
+
+  /* ---- idle trigger: a line, not a card ---- */
+  .dis-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: var(--tap);
+    padding: 0 0.2rem;
+    font-size: 0.76rem;
+    color: var(--text-faint);
+    transition: color 0.3s var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .dis-trigger:hover { color: var(--gold); }
+  }
+
+  @media (max-width: 767px) {
+    .dis-panel { padding: 1.2rem 1.25rem; }
+  }
+}

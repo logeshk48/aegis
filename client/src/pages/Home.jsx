@@ -12,7 +12,9 @@ import EveningCheckIn from '../components/EveningCheckIn';
 import SleepCard from '../components/SleepCard';
 import { buildSummary } from '../utils/summary';
 import { isEvening } from '../utils/eveningPrompt';
+import DisruptionCard from '../components/DisruptionCard';
 import '../styles/home.css';
+import '../styles/disruption.css';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 const dayOf = (d) => new Date(d).toISOString().split('T')[0];
@@ -52,11 +54,31 @@ function Home() {
   // without a second request
   const [sleep, setSleep] = useState(null);
 
+  // disruption state lives here, not in the card, for two reasons: the card
+  // renders in two places and they must agree, and the mission has to know
+  // not to push work at someone who marked themselves out.
+  const [disruption, setDisruption] = useState(null);
+
+  // Drift and the timeline both read windows that a disruption changes, and
+  // both fetch on mount. Bumping this remounts them.
+  const [readKey, setReadKey] = useState(0);
+
   // evening check-in — only looked up after dark
   const [wroteToday, setWroteToday] = useState(null); // null = not checked yet
   const [eveningDismissed, setEveningDismissed] = useState(
     () => localStorage.getItem('aegis:eveningDismissed') === todayStr()
   );
+
+  const loadDisruption = useCallback(async () => {
+    try {
+      const res = await api.get('/disruption');
+      setDisruption(res.data);
+    } catch (err) {
+      console.error('Could not load disruption state:', err);
+      // An empty shape, so the card renders nothing rather than crashing.
+      setDisruption({ active: null, cliff: null });
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,7 +96,8 @@ function Home() {
       }
     };
     fetchData();
-  }, []);
+    loadDisruption();
+  }, [loadDisruption]);
 
   // Only fetch the diary once it's actually evening — no point costing a
   // request at 9am for a card that cannot render until 8pm.
@@ -124,6 +147,14 @@ function Home() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  // Marking or ending a disruption moves the drift windows, so the cached
+  // verdict on screen is now wrong. Remount the two panels that show it.
+  const handleDisruptionChange = async () => {
+    await loadDisruption();
+    setReadKey((k) => k + 1);
+    setMissionKey((k) => k + 1);
   };
 
   const isHabitDoneToday = (h) => h.completedDates?.includes(todayStr());
@@ -212,6 +243,8 @@ function Home() {
     setWroteToday(true);
     await reloadAll();
   };
+
+  const paused = !!disruption?.active;
 
   const overdueTasks = tasks.filter(isOverdue).sort(byTime);
   const dueTodayTasks = tasks.filter(isDueToday).sort(byTime);
@@ -318,8 +351,15 @@ function Home() {
       </div>
 
       {/* ---- things that want something from you ---- */}
-      {/* Both of these render nothing unless they have a question,
-          so at 3pm you go straight from the greeting to your day. */}
+      {/* These render nothing unless they have a question, so at 3pm you go
+          straight from the greeting to your day. Disruption comes first:
+          if you were away, that changes how everything below should read. */}
+
+      <DisruptionCard
+        variant="alert"
+        state={disruption}
+        onChange={handleDisruptionChange}
+      />
 
       <SleepCard onChanged={reloadAll} onState={handleSleepState} />
 
@@ -337,12 +377,16 @@ function Home() {
         />
       )}
 
-      <MissionCard
-        key={missionKey}
-        onStart={(s) => setFocusSession(s)}
-        onResume={(s) => setFocusSession(s)}
-        onTasksChanged={reloadTasks}
-      />
+      {/* No mission while paused. Handing a focus target to someone who just
+          told us they're ill is the failure this whole feature exists to stop. */}
+      {!paused && (
+        <MissionCard
+          key={missionKey}
+          onStart={(s) => setFocusSession(s)}
+          onResume={(s) => setFocusSession(s)}
+          onTasksChanged={reloadTasks}
+        />
+      )}
 
       {/* ---- your actual day ---- */}
       <div className="bento bento-main animate-rise delay-1">
@@ -441,15 +485,23 @@ function Home() {
 
       {/* ---- things to read, not act on ---- */}
 
-      <DriftPanel onStartRecovery={handleStartRecovery} />
+      <DriftPanel key={`drift-${readKey}`} onStartRecovery={handleStartRecovery} />
 
       <div className="animate-rise delay-3">
         <Suggestions onAccept={handleAcceptSuggestion} />
       </div>
 
       <div className="animate-rise delay-4">
-        <LifeTimeline />
+        <LifeTimeline key={`tl-${readKey}`} />
       </div>
+
+      {/* The quiet way in — one line, placed where you'd look before leaving,
+          not competing with the greeting. */}
+      <DisruptionCard
+        variant="trigger"
+        state={disruption}
+        onChange={handleDisruptionChange}
+      />
 
       <MoreCards completionRate={overallRate} />
 
